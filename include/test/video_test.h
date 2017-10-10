@@ -13,12 +13,12 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#define DEFAULT_DEVICE_NAME "/dev/video0"
-#define DEFAULT_BUFFER_SIZE 32
-#define DEFAULT_FRAME_WIDTH 1280
-#define DEFAULT_FRAME_HEIGHT 920
-#define DEFAULT_FPS 10
-#define DEFAULT_PALETTE V4L2_PIX_FMT_YUYV
+#define DEFAULT_DEVICE_NAME "/dev/video1"
+#define DEFAULT_BUFFER_SIZE 16
+#define DEFAULT_FRAME_WIDTH 744
+#define DEFAULT_FRAME_HEIGHT 480
+#define DEFAULT_FPS 30
+#define DEFAULT_PALETTE V4L2_PIX_FMT_SGRBG8
 
 namespace lirs {
 
@@ -86,7 +86,8 @@ namespace lirs {
 
         /******* Getters *******/
 
-        Buffer& currentFrame();
+        void* getCurrentFrameData();
+        size_t getCurrentFrameSize() const;
         uint32_t getHeight() const;
         uint32_t getWidth() const;
         timeval getTimestamp() const;
@@ -115,7 +116,8 @@ namespace lirs {
         v4l2_format _format;
         v4l2_capability _capability;
 
-        Buffer _currentBuffer;
+        std::shared_ptr<uint8_t> _currentFrame;
+        size_t _currentFrameSize;
         timeval _timestamp;
         size_t _sequence;
 
@@ -494,10 +496,12 @@ namespace lirs {
         auto currentFrame = _buffers[buf.index];
 
         /* CPU consuming code */
-        memcpy(_currentBuffer.data, currentFrame.data, _currentBuffer.length);
+        memcpy(_currentFrame, currentFrame.data, currentFrame.length);
+        _currentFrameSize = currentFrame.length;
 
         _timestamp = buf.timestamp;
         _sequence  = buf.sequence;
+
 
         printf("Frame captured: size = %d, seq = %d, secs = %ld\n, nanosecs = %ld\n",
                buf.length, buf.sequence, buf.timestamp.tv_sec, buf.timestamp.tv_usec);
@@ -539,8 +543,8 @@ namespace lirs {
         return true;
     }
 
-    Buffer& V4L2Capture::currentFrame() {
-      return _currentBuffer;
+    V4L2Capture::getCurrentFrameData() {
+
     }
 
     uint32_t V4L2Capture::getHeight() const {

@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 
   image_transport::ImageTransport it(nh);
-  image_transport::CameraPublisher pub = it.advertiseCamera("camera", 1);
+  image_transport::CameraPublisher pub = it.advertiseCamera("camera", 64);
 
   ROS_INFO("Stream provider: %s", DEFAULT_DEVICE_NAME);
 
@@ -84,11 +84,17 @@ int main(int argc, char **argv)
 
       if (status) {
 
-        auto image_yuv = cap.currentFrame().data;
+        auto image_yuv = (uchar*) cap.currentFrame().data;
 
-        auto frame = cv::Mat(cap.getHeight(), cap.getWidth(), CV_8UC1, (uchar*) image_yuv);
+        ROS_INFO("Image size: %d x %d, step: %d", cap.getHeight(), cap.getWidth(), cap.getStep());
 
-        msg = cv_bridge::CvImage(header, "rgb8", frame).toImageMsg();
+        auto bayer8 = cv::Mat((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC1, image_yuv, (size_t) cap.getStep());
+
+        auto frame = cv::Mat((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC3);
+
+        cv::cvtColor(bayer8, frame, CV_BayerGB2BGR);
+
+        msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
 
         if (cam_info_msg.distortion_model == "") {
           cam_info_msg = getDefaultCAMInfo(msg);

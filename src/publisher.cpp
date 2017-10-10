@@ -37,52 +37,71 @@ sensor_msgs::CameraInfo getDefaultCAMInfo(sensor_msgs::ImagePtr img){
     // Give a reasonable default projection matrix
     cam_info_msg.P = boost::assign::list_of (1.0) (0.0) (img->width/2.0) (0.0)
                                             (0.0) (1.0) (img->height/2.0) (0.0)
-                                            (0.0) (0.0) (1.0) (0.0);
+                                           (0.0) (0.0) (1.0) (0.0);
     return cam_info_msg;
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "publisher");
+
+  ros::init(argc, argv, "test_node");
   ros::NodeHandle nh;
 
-  ros::Publisher chatter_pub = nh.advertise<sensor_msgs::Image>("image_raw", 64);
 
-  lirs::V4L2Capture capture(DEFAULT_DEVICE_NAME);
+  image_transport::ImageTransport it(nh);
+  image_transport::CameraPublisher pub = it.advertiseCamera("camera", 1);
 
-  ros::Rate loop_rate(DEFAULT_FPS);
+  ROS_INFO("Stream provider: %s", DEFAULT_DEVICE_NAME);
 
-  while (ros::ok())
-  {
-    sensor_msgs::Image img;
+  lirs::V4L2Capture cap(DEFAULT_DEVICE_NAME);
 
-    auto status = capture.mainloop();
+  std::string camera_name = "camera";
 
-    if (status) {
+  ROS_INFO("FPS: %d", DEFAULT_FPS);
 
-      auto frame = capture.currentFrame();
+  std::string frame_id = "optical_frame_id";
 
-      std::vector<uint8_t> _data;
+  std::string camera_info_url = "'";
 
-      _data.assign((uint8_t*)frame.data, (uint8_t*) frame.data + frame.length);
+  ROS_INFO("Width, height: %d x %d", DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT);
 
-      img.data = _data;
-      img.encoding = sensor_msgs::image_encodings::YUV422;
-      img.height = capture.getHeight();
-      img.width = capture.getWidth();
-      img.is_bigendian = 0;
-      img.step = capture.getStep();
-      img.header.frame_id = "optical_frame_id";
-      img.header.seq = capture.getSequence();
-      img.header.stamp.sec = capture.getTimestamp().tv_sec;
-      img.header.stamp.nsec = capture.getTimestamp().tv_usec;
+  ROS_INFO("Opened stream, starting to publish");
 
-      chatter_pub.publish(img);
+  sensor_msgs::ImagePtr msg;
+  sensor_msgs::CameraInfo cam_info_msg;
+  std_msgs::Header header;
+  header.frame_id = frame_id;
+  camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
+  cam_info_msg = cam_info_manager.getCameraInfo();
+
+  ros::Rate r(DEFAULT_FPS);
+
+  while (nh.ok()) {
+
+    if (pub.getNumSubscribers() > 0) {
+
+      auto status = cap.mainloop();
+
+      if (status) {
+
+        auto image_yuv = cap.currentFrame().data;
+
+        auto frame = cv::Mat(cap.getHeight(), cap.getWidth(), CV_8UC1, (uchar*) image_yuv);
+
+        msg = cv_bridge::CvImage(header, "rgb8", frame).toImageMsg();
+
+        if (cam_info_msg.distortion_model == "") {
+          cam_info_msg = getDefaultCAMInfo(msg);
+          cam_info_manager.setCameraInfo(cam_info_msg);
+        }
+
+        pub.publish(*msg, cam_info_msg, ros::Time::now());
+      }
+
+      ros::spinOnce();
     }
 
-    ros::spinOnce();
-
-    loop_rate.sleep();
+    r.sleep();
   }
 
   return 0;

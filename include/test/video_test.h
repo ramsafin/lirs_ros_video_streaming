@@ -86,7 +86,7 @@ namespace lirs {
 
         /******* Getters *******/
 
-        const Buffer& currentFrame();
+        Buffer& currentFrame();
         uint32_t getHeight() const;
         uint32_t getWidth() const;
         timeval getTimestamp() const;
@@ -539,7 +539,7 @@ namespace lirs {
         return true;
     }
 
-    const Buffer& V4L2Capture::currentFrame() {
+    Buffer& V4L2Capture::currentFrame() {
       return _currentBuffer;
     }
 

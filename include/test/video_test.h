@@ -14,10 +14,10 @@
 #include <sys/mman.h>
 
 #define DEFAULT_DEVICE_NAME "/dev/video1"
-#define DEFAULT_BUFFER_SIZE 16
-#define DEFAULT_FRAME_WIDTH 744
+#define DEFAULT_BUFFER_SIZE 4
+#define DEFAULT_FRAME_WIDTH 640
 #define DEFAULT_FRAME_HEIGHT 480
-#define DEFAULT_FPS 30
+#define DEFAULT_FPS 60
 #define DEFAULT_PALETTE V4L2_PIX_FMT_SGRBG8
 
 namespace lirs {
@@ -116,7 +116,7 @@ namespace lirs {
         v4l2_format _format;
         v4l2_capability _capability;
 
-        std::shared_ptr<uint8_t> _currentFrame;
+        void* _currentFrameData;
         size_t _currentFrameSize;
         timeval _timestamp;
         size_t _sequence;
@@ -132,11 +132,12 @@ namespace lirs {
         _fps         = DEFAULT_FPS;
         _bufferSize  = DEFAULT_BUFFER_SIZE;
         _isCapturing = false;
-        _currentBuffer = Buffer();
+        _currentFrameSize = 0;
+        _currentFrameData = nullptr;
 
         initCapture(deviceName);
 
-        printf("Buffers: %d, fps(fake): %d, width: %d, height: %d, step: %d, imgSize: %d\n",
+        printf("Buffers: %d, fps: %d, width: %d, height: %d, step: %d, imgSize: %d\n",
                _bufferSize, _fps, _width, _height, _format.fmt.pix.bytesperline, _format.fmt.pix.sizeimage);
     }
 
@@ -247,6 +248,10 @@ namespace lirs {
             fprintf(stderr, "tryFps %d VIDIOC_S_PARM %s\n", _fps, strerror(errno));
             return false;
         }
+
+        _fps = fps.parm.capture.timeperframe.denominator;
+
+        return true;
     }
 
     bool V4L2Capture::initBuffers() {
@@ -314,8 +319,9 @@ namespace lirs {
         /* initialize current buffer */
         auto bufLength = _buffers[0].length;
 
-        _currentBuffer.length = bufLength;
-        _currentBuffer.data = ::operator new (bufLength);
+        _currentFrameSize = bufLength;
+        // todo may be error use malloc
+        _currentFrameData = ::operator new (bufLength);
 
         return true;
     }
@@ -330,9 +336,9 @@ namespace lirs {
             }
         }
 
-        if (_currentBuffer.data) {
+        if (_currentFrameData) {
             // note deleting *void
-            delete (uint8_t*) _currentBuffer.data;
+            delete (uint8_t*) _currentFrameData;
         }
     }
 
@@ -496,7 +502,7 @@ namespace lirs {
         auto currentFrame = _buffers[buf.index];
 
         /* CPU consuming code */
-        memcpy(_currentFrame, currentFrame.data, currentFrame.length);
+        memcpy(_currentFrameData, currentFrame.data, currentFrame.length);
         _currentFrameSize = currentFrame.length;
 
         _timestamp = buf.timestamp;
@@ -543,10 +549,6 @@ namespace lirs {
         return true;
     }
 
-    V4L2Capture::getCurrentFrameData() {
-
-    }
-
     uint32_t V4L2Capture::getHeight() const {
       return _height;
     }
@@ -565,6 +567,14 @@ namespace lirs {
 
     uint32_t V4L2Capture::getStep() const {
       return _format.fmt.pix.bytesperline;
+    }
+
+    size_t V4L2Capture::getCurrentFrameSize() const {
+      return _currentFrameSize;
+    }
+
+    void* V4L2Capture::getCurrentFrameData() {
+        return _currentFrameData;
     }
 }
 

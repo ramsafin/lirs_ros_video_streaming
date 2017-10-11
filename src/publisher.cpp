@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 
   image_transport::ImageTransport it(nh);
-  image_transport::CameraPublisher pub = it.advertiseCamera("camera", 64);
+  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1000);
 
   ROS_INFO("Stream provider: %s", DEFAULT_DEVICE_NAME);
 
@@ -57,13 +57,9 @@ int main(int argc, char **argv)
 
   std::string camera_name = "camera";
 
-  ROS_INFO("FPS: %d", DEFAULT_FPS);
-
   std::string frame_id = "optical_frame_id";
 
-  std::string camera_info_url = "'";
-
-  ROS_INFO("Width, height: %d x %d", DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT);
+  std::string camera_info_url = "";
 
   ROS_INFO("Opened stream, starting to publish");
 
@@ -84,17 +80,11 @@ int main(int argc, char **argv)
 
       if (status) {
 
-        auto image_yuv = (uchar*) cap.currentFrame().data;
+        auto rawFrame = (uchar*) cap.getCurrentFrameData();
 
-        ROS_INFO("Image size: %d x %d, step: %d", cap.getHeight(), cap.getWidth(), cap.getStep());
+        cv::Mat frame((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC1, rawFrame, cap.getStep());
 
-        auto bayer8 = cv::Mat((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC1, image_yuv, (size_t) cap.getStep());
-
-        auto frame = cv::Mat((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC3);
-
-        cv::cvtColor(bayer8, frame, CV_BayerGB2BGR);
-
-        msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+        msg = cv_bridge::CvImage(header, sensor_msgs::image_encodings::BAYER_GRBG8, frame).toImageMsg();
 
         if (cam_info_msg.distortion_model == "") {
           cam_info_msg = getDefaultCAMInfo(msg);

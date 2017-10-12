@@ -14,10 +14,10 @@
 #include <sys/mman.h>
 
 #define DEFAULT_DEVICE_NAME "/dev/video1"
-#define DEFAULT_BUFFER_SIZE 4
+#define DEFAULT_BUFFER_SIZE 8
 #define DEFAULT_FRAME_WIDTH 640
 #define DEFAULT_FRAME_HEIGHT 480
-#define DEFAULT_FPS 60
+#define DEFAULT_FPS 30
 #define DEFAULT_PALETTE V4L2_PIX_FMT_SGRBG8
 
 namespace lirs {
@@ -77,6 +77,8 @@ namespace lirs {
         bool disableSteaming();
 
         int isStreamReadable();
+
+        bool isOpened() const;
 
         bool initCapture(const std::string&);
 
@@ -410,7 +412,7 @@ namespace lirs {
         FD_SET(_deviceHandle, &fds);
 
         struct timeval time;
-        time.tv_sec  = 2;
+        time.tv_sec  = 10;
         time.tv_usec = 0;
 
         /*
@@ -509,8 +511,8 @@ namespace lirs {
         _sequence  = buf.sequence;
 
 
-        printf("Frame captured: size = %d, seq = %d, secs = %ld\n, nanosecs = %ld\n",
-               buf.length, buf.sequence, buf.timestamp.tv_sec, buf.timestamp.tv_usec);
+//        printf("Frame captured: size = %d, seq = %d, secs = %ld\n, nanosecs = %ld\n",
+//               buf.length, buf.sequence, buf.timestamp.tv_sec, buf.timestamp.tv_usec);
 
         if (v4l2_ioctl(_deviceHandle, VIDIOC_QBUF, &buf) == -1) {
             perror("VIDIOC_QBUF");
@@ -575,6 +577,10 @@ namespace lirs {
 
     void* V4L2Capture::getCurrentFrameData() {
         return _currentFrameData;
+    }
+
+    bool V4L2Capture::isOpened() const {
+      return _deviceHandle != -1 && !_deviceName.empty();
     }
 }
 

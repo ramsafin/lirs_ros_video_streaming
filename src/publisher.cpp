@@ -1,6 +1,5 @@
 #include "ros/ros.h"
 #include "sensor_msgs/image_encodings.h"
-#include "sensor_msgs/Image.h"
 
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
@@ -49,7 +48,7 @@ int main(int argc, char **argv)
 
 
   image_transport::ImageTransport it(nh);
-  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1000);
+  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1);
 
   ROS_INFO("Stream provider: %s", DEFAULT_DEVICE_NAME);
 
@@ -57,12 +56,18 @@ int main(int argc, char **argv)
 
   std::string camera_name = "camera";
 
-  std::string frame_id = "optical_frame_id";
+  std::string frame_id = "camera_optical_frame";
 
-  std::string camera_info_url = "";
+  std::string camera_info_url;
+
+  if (!cap.isOpened()) {
+    ROS_ERROR_STREAM("Couldn't open the video device");
+    return -1;
+  }
 
   ROS_INFO("Opened stream, starting to publish");
 
+  uchar* rawFrame;
   sensor_msgs::ImagePtr msg;
   sensor_msgs::CameraInfo cam_info_msg;
   std_msgs::Header header;
@@ -74,13 +79,13 @@ int main(int argc, char **argv)
 
   while (nh.ok()) {
 
-    if (pub.getNumSubscribers() > 0) {
+    auto status = cap.mainloop();
 
-      auto status = cap.mainloop();
+    if (pub.getNumSubscribers() > 0) {
 
       if (status) {
 
-        auto rawFrame = (uchar*) cap.getCurrentFrameData();
+        rawFrame = (uchar*) cap.getCurrentFrameData();
 
         cv::Mat frame((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC1, rawFrame, cap.getStep());
 
@@ -92,6 +97,7 @@ int main(int argc, char **argv)
         }
 
         pub.publish(*msg, cam_info_msg, ros::Time::now());
+
       }
 
       ros::spinOnce();
@@ -99,6 +105,4 @@ int main(int argc, char **argv)
 
     r.sleep();
   }
-
-  return 0;
 }

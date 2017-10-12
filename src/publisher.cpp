@@ -13,6 +13,8 @@
 
 #include "test/video_test.h"
 
+#include <chrono>
+
 sensor_msgs::CameraInfo getDefaultCAMInfo(sensor_msgs::ImagePtr img){
     sensor_msgs::CameraInfo cam_info_msg;
     cam_info_msg.header.frame_id = img->header.frame_id;
@@ -46,9 +48,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "test_node");
   ros::NodeHandle nh;
 
-
   image_transport::ImageTransport it(nh);
-  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1);
+  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 5);
 
   ROS_INFO("Stream provider: %s", DEFAULT_DEVICE_NAME);
 
@@ -77,9 +78,17 @@ int main(int argc, char **argv)
 
   ros::Rate r(DEFAULT_FPS);
 
+  using clock = std::chrono::steady_clock;
+
   while (nh.ok()) {
 
+    auto s = clock::now();
+
     auto status = cap.mainloop();
+
+    auto e = clock::now();
+
+    std::cout << "Read frame: " << (e - s).count() << std::endl;
 
     if (pub.getNumSubscribers() > 0) {
 
@@ -87,9 +96,9 @@ int main(int argc, char **argv)
 
         rawFrame = (uchar*) cap.getCurrentFrameData();
 
-        cv::Mat frame((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC1, rawFrame, cap.getStep());
+        cv::Mat frame((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC2, rawFrame, cap.getStep());
 
-        msg = cv_bridge::CvImage(header, sensor_msgs::image_encodings::BAYER_GRBG8, frame).toImageMsg();
+        msg = cv_bridge::CvImage(header, sensor_msgs::image_encodings::YUV422, frame).toImageMsg();
 
         if (cam_info_msg.distortion_model == "") {
           cam_info_msg = getDefaultCAMInfo(msg);

@@ -13,12 +13,12 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#define DEFAULT_DEVICE_NAME "/dev/video1"
-#define DEFAULT_BUFFER_SIZE 8
-#define DEFAULT_FRAME_WIDTH 640
-#define DEFAULT_FRAME_HEIGHT 480
-#define DEFAULT_FPS 30
-#define DEFAULT_PALETTE V4L2_PIX_FMT_SGRBG8
+#define DEFAULT_DEVICE_NAME "/dev/video0"
+#define DEFAULT_BUFFER_SIZE 4
+#define DEFAULT_FRAME_WIDTH 1280
+#define DEFAULT_FRAME_HEIGHT 720
+#define DEFAULT_FPS 50
+#define DEFAULT_PALETTE V4L2_PIX_FMT_YUYV //V4L2_PIX_FMT_SGRBG8
 
 namespace lirs {
 

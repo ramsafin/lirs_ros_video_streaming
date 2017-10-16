@@ -14,11 +14,12 @@
 #include <sys/mman.h>
 
 #define DEFAULT_DEVICE_NAME "/dev/video0"
-#define DEFAULT_BUFFER_SIZE 4
+#define DEFAULT_BUFFER_SIZE 2
 #define DEFAULT_FRAME_WIDTH 1280
 #define DEFAULT_FRAME_HEIGHT 720
 #define DEFAULT_FPS 50
-#define DEFAULT_PALETTE V4L2_PIX_FMT_YUYV //V4L2_PIX_FMT_SGRBG8
+#define DEFAULT_PALETTE V4L2_PIX_FMT_YUYV
+//V4L2_PIX_FMT_SGRBG8
 
 namespace lirs {
 
@@ -323,7 +324,8 @@ namespace lirs {
 
         _currentFrameSize = bufLength;
         // todo may be error use malloc
-        _currentFrameData = ::operator new (bufLength);
+//        _currentFrameData = ::operator new (bufLength);
+        _currentFrameData = malloc(bufLength);
 
         return true;
     }
@@ -340,7 +342,8 @@ namespace lirs {
 
         if (_currentFrameData) {
             // note deleting *void
-            delete (uint8_t*) _currentFrameData;
+//            delete (uint8_t*) _currentFrameData;
+            free(_currentFrameData);
         }
     }
 

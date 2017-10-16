@@ -4,8 +4,9 @@
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 
-#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include "opencv2/highgui/highgui.hpp"
+
 #include <cv_bridge/cv_bridge.h>
 
 #include <sstream>
@@ -21,8 +22,6 @@ sensor_msgs::CameraInfo getDefaultCAMInfo(sensor_msgs::ImagePtr img){
     // Fill image size
     cam_info_msg.height = img->height;
     cam_info_msg.width = img->width;
-    ROS_INFO_STREAM("The image width is: " << img->width);
-    ROS_INFO_STREAM("The image height is: " << img->height);
     // Add the most common distortion model as sensor_msgs/CameraInfo says
     cam_info_msg.distortion_model = "plumb_bob";
     // Don't let distorsion matrix be empty
@@ -45,11 +44,11 @@ sensor_msgs::CameraInfo getDefaultCAMInfo(sensor_msgs::ImagePtr img){
 int main(int argc, char **argv)
 {
 
-  ros::init(argc, argv, "test_node");
+  ros::init(argc, argv, "lirs_video_stream");
   ros::NodeHandle nh;
 
   image_transport::ImageTransport it(nh);
-  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 5);
+  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1);
 
   ROS_INFO("Stream provider: %s", DEFAULT_DEVICE_NAME);
 
@@ -68,7 +67,7 @@ int main(int argc, char **argv)
 
   ROS_INFO("Opened stream, starting to publish");
 
-  uchar* rawFrame;
+  void* rawFrame;
   sensor_msgs::ImagePtr msg;
   sensor_msgs::CameraInfo cam_info_msg;
   std_msgs::Header header;
@@ -78,25 +77,17 @@ int main(int argc, char **argv)
 
   ros::Rate r(DEFAULT_FPS);
 
-  using clock = std::chrono::steady_clock;
-
   while (nh.ok()) {
-
-    auto s = clock::now();
-
-    auto status = cap.mainloop();
-
-    auto e = clock::now();
-
-    std::cout << "Read frame: " << (e - s).count() << std::endl;
 
     if (pub.getNumSubscribers() > 0) {
 
+      auto status = cap.mainloop();
+
       if (status) {
 
-        rawFrame = (uchar*) cap.getCurrentFrameData();
+        rawFrame = cap.getCurrentFrameData();
 
-        cv::Mat frame((int) cap.getHeight(), (int) cap.getWidth(), CV_8UC2, rawFrame, cap.getStep());
+        cv::Mat frame = cv::Mat(cap.getHeight(), cap.getWidth(), CV_8UC2, rawFrame, cap.getStep());
 
         msg = cv_bridge::CvImage(header, sensor_msgs::image_encodings::YUV422, frame).toImageMsg();
 

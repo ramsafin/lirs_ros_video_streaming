@@ -28,7 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 
 catkin_package()
 

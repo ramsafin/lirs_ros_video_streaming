@@ -87,9 +87,9 @@ int main(int argc, char **argv)
 
         rawFrame = cap.getCurrentFrameData();
 
-        cv::Mat frame = cv::Mat(cap.getHeight(), cap.getWidth(), CV_8UC2, rawFrame, cap.getStep());
+        cv::Mat frame = cv::Mat(cap.getHeight(), cap.getWidth(), CV_8UC1, rawFrame, cap.getStep());
 
-        msg = cv_bridge::CvImage(header, sensor_msgs::image_encodings::YUV422, frame).toImageMsg();
+        msg = cv_bridge::CvImage(header, sensor_msgs::image_encodings::BAYER_GRBG8, frame).toImageMsg();
 
         if (cam_info_msg.distortion_model == "") {
           cam_info_msg = getDefaultCAMInfo(msg);

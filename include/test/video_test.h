@@ -13,9 +13,9 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#define DEFAULT_DEVICE_NAME "/dev/video0"
+#define DEFAULT_DEVICE_NAME "/dev/video1"
 #define DEFAULT_BUFFER_SIZE 2
-#define DEFAULT_FRAME_WIDTH 640
+#define DEFAULT_FRAME_WIDTH 744
 #define DEFAULT_FRAME_HEIGHT 480
 #define DEFAULT_FPS 30
 #define DEFAULT_PALETTE V4L2_PIX_FMT_SGRBG8
@@ -124,7 +124,6 @@ namespace lirs {
         size_t _currentFrameSize;
         timeval _timestamp;
         size_t _sequence;
-
     };
 
     V4L2Capture::V4L2Capture(const std::string &deviceName) {
@@ -135,7 +134,7 @@ namespace lirs {
         _palette     = DEFAULT_PALETTE;
         _fps         = DEFAULT_FPS;
         _bufferSize  = DEFAULT_BUFFER_SIZE;
-        _isCapturing = false;
+        _isCapturing      = false;
         _currentFrameSize = 0;
         _currentFrameData = nullptr;
 
@@ -172,7 +171,7 @@ namespace lirs {
         int handle = open(deviceName.c_str(), O_RDWR | O_NONBLOCK);
 
         if (handle == -1) {
-            fprintf(stderr, "Cannto open device '%s': %s\n", _deviceName.c_str(), strerror(errno));
+            fprintf(stderr, "Cannot open device '%s': %s\n", _deviceName.c_str(), strerror(errno));
             return false;
         }
 
@@ -222,7 +221,7 @@ namespace lirs {
         auto format = v4l2_format();
 
         format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        format.fmt.pix.field = V4L2_FIELD_ANY;
+        format.fmt.pix.field = V4L2_FIELD_INTERLACED;
         format.fmt.pix.pixelformat = _palette;
         format.fmt.pix.height = _height;
         format.fmt.pix.width = _width;
@@ -230,6 +229,11 @@ namespace lirs {
         if (v4l2_ioctl(_deviceHandle, VIDIOC_S_FMT, &format) == -1) {
             fprintf(stderr, "tryPalette %d VIDOC_S_FMT '%s'\n", _palette, strerror(errno));
             return false;
+        }
+
+        if (_palette != format.fmt.pix.pixelformat) {
+          fprintf(stderr, "tryPalette %d is not supported by device", _palette);
+          return false;
         }
 
         _format = format;
@@ -292,7 +296,7 @@ namespace lirs {
             }
         }
 
-        printf("Buffers number: %d\n", requestBuffers.count);
+        printf("Actual buffers number: %d\n", requestBuffers.count);
 
         for (uint32_t idx = 0; idx < requestBuffers.count; ++idx) {
 
@@ -448,16 +452,6 @@ namespace lirs {
             return false;
         }
 
-        auto format = v4l2_format();
-        format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-        if (v4l2_ioctl(_deviceHandle, VIDIOC_G_FMT, &format) == -
-            1) {
-            fprintf(stderr, "VIDEOIO ERROR: Couldn't obtain specifics of capture window");
-            // todo cleanup
-            return false;
-        }
-
         if (!tryPalette()) {
             // todo clean up
             // todo autosetup
@@ -513,10 +507,6 @@ namespace lirs {
 
         _timestamp = buf.timestamp;
         _sequence  = buf.sequence;
-
-
-//        printf("Frame captured: size = %d, seq = %d, secs = %ld\n, nanosecs = %ld\n",
-//               buf.length, buf.sequence, buf.timestamp.tv_sec, buf.timestamp.tv_usec);
 
         if (v4l2_ioctl(_deviceHandle, VIDIOC_QBUF, &buf) == -1) {
             perror("VIDIOC_QBUF");

@@ -4,18 +4,17 @@
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/xphoto.hpp>
-
 #include <sstream>
 #include <boost/assign/list_of.hpp>
 
-#include "test/video_test.h"
+#include "lirs_video_stream/video_stream_api.hpp"
 
 #include <chrono>
 
 sensor_msgs::CameraInfo getDefaultCAMInfo(sensor_msgs::ImagePtr img){
+
+    ROS_INFO("Get camera info");
+
     sensor_msgs::CameraInfo cam_info_msg;
     cam_info_msg.header.frame_id = img->header.frame_id;
     // Fill image size
@@ -43,34 +42,72 @@ sensor_msgs::CameraInfo getDefaultCAMInfo(sensor_msgs::ImagePtr img){
 int main(int argc, char **argv)
 {
 
-  ros::init(argc, argv, "lirs_video_stream");
+  ros::init(argc, argv, "lirs_video_stream_pulisher");
+
   ros::NodeHandle nh;
+  ros::NodeHandle _nh("~");
 
   image_transport::ImageTransport it(nh);
   image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1);
 
-  lirs::V4L2Capture cap("/dev/video1");
+  std::string deviceName;
 
-  std::string camera_name = "camera1";
-  std::string frame_id = "cam1_frame_id";
-  std::string camera_info_url;
+  if (_nh.getParam("device_name", deviceName)) {
+    ROS_INFO_STREAM("Video stream device name: " << deviceName);
+  } else {
+    ROS_ERROR("Failed to get 'device_name' parameter");
+  }
+
+  std::string cameraName;
+
+  _nh.param("camera_name", cameraName, std::string("camera"));
+  ROS_INFO_STREAM("Camera name: " << cameraName);
+
+  int fps;
+
+  _nh.getParam("fps", fps);
+  ROS_INFO_STREAM("Frame per second: " << fps);
+
+  std::string frameId;
+
+  _nh.getParam("frame_id", frameId);
+  ROS_INFO_STREAM("Frame id: " << frameId);
+
+  std::string cameraInfoUrl;
+
+  _nh.getParam("camera_info_url", cameraInfoUrl);
+  ROS_INFO_STREAM("Camera meta info url: " << cameraInfoUrl);
+
+  int width;
+  int height;
+
+  _nh.getParam("width", width);
+  _nh.getParam("height", height);
+  ROS_INFO_STREAM("Image width x height: " << width << " x " << height);
+
+  std::string imageFormat;
+
+  _nh.getParam("image_format", imageFormat);
+  ROS_INFO_STREAM("Image fromat: " << imageFormat);
+
+  lirs::V4L2Capture cap(deviceName);
 
   if (!cap.isOpened()) {
-    ROS_ERROR_STREAM("Couldn't open the video device");
+    ROS_ERROR_STREAM("Couldn't open the video device: " << deviceName);
     return -1;
   }
 
-  uchar* rawData;
+  uint8_t* rawData;
 
   std_msgs::Header header;
   sensor_msgs::ImagePtr msg;
   sensor_msgs::CameraInfo cam_info_msg;
 
-  camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
+  camera_info_manager::CameraInfoManager cam_info_manager(nh, cameraName, cameraInfoUrl);
 
   // init
   cam_info_msg = cam_info_manager.getCameraInfo();
-  header.frame_id = frame_id;
+  header.frame_id = frameId;
 
   // to Image message
   msg = boost::make_shared<sensor_msgs::Image>();
@@ -81,13 +118,11 @@ int main(int argc, char **argv)
   msg->encoding     = sensor_msgs::image_encodings::BAYER_GRBG8;
 
   msg->data.resize(cap.getStep() * cap.getHeight());
-
-  header.frame_id = "camera_frame_id";
   msg->header = header;
 
   ROS_INFO("Opened stream, starting to publish");
 
-  ros::Rate r(DEFAULT_FPS);
+  ros::Rate r(fps);
 
   while (nh.ok()) {
 
@@ -97,9 +132,9 @@ int main(int argc, char **argv)
 
       if (status) {
 
-        rawData = (uchar*) cap.getCurrentFrameData();
+        rawData = (uint8_t*) cap.getCurrentFrameData();
 
-        msg->data.assign(rawData, rawData + cap.getHeight() * cap.getStep()); // set ROS image data
+        msg->data.assign(rawData, rawData + cap.getHeight() * cap.getStep());
 
         if (cam_info_msg.distortion_model.empty()) {
           cam_info_msg = getDefaultCAMInfo(msg);

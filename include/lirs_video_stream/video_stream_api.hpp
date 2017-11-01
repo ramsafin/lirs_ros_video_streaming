@@ -13,8 +13,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#define DEFAULT_DEVICE_NAME "/dev/video1"
-#define DEFAULT_BUFFER_SIZE 2
+#define DEFAULT_DEVICE_NAME "/dev/video0"
+#define DEFAULT_BUFFER_SIZE 4
 #define DEFAULT_FRAME_WIDTH 744
 #define DEFAULT_FRAME_HEIGHT 480
 #define DEFAULT_FPS 30
@@ -127,7 +127,8 @@ namespace lirs {
     };
 
     V4L2Capture::V4L2Capture(const std::string &deviceName) {
-        printf(">>> Constructor\n");
+
+      printf(">>> Constructor\n");
 
         _width       = DEFAULT_FRAME_WIDTH;
         _height      = DEFAULT_FRAME_HEIGHT;

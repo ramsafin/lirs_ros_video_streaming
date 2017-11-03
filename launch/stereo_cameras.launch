@@ -1,15 +1,5 @@
 <launch>
 
-    <arg name="camera_name" default="camera" />
-    <arg name="device_name" default="/dev/video0" />
-    <arg name="fps" default="30" />
-    <arg name="frame_id" default="$(arg camera_name)" />
-    <arg name="camera_info_url" default="" />
-    <arg name="width" default="744" />
-    <arg name="height" default="480" />
-    <arg name="image_format" default="bayer_grbg8" />
-    <arg name="show" default="true" />
-
     <group ns="$(arg camera_name)">
         <node pkg="lirs_video_stream" type="video_stream" name="$(arg camera_name)_video_stream" output="screen">
             <param name="camera_name" type="string" value="$(arg camera_name)" />
@@ -26,4 +16,5 @@
             <remap from="image" to="image_raw" />
         </node>
     </group>
+
 </launch>

@@ -24,7 +24,7 @@
 
 namespace lirs {
 
-    /* ioctl wrapper */
+    /* ioctl wrapper function */
     static int v4l2_ioctl(int deviceHandle, unsigned long int request, void *arg) {
         int status = 0;
         do {
@@ -329,10 +329,7 @@ namespace lirs {
         auto bufLength = _buffers[0].length;
 
         _currentFrameSize = bufLength;
-        // todo may be error use malloc
-//        _currentFrameData = ::operator new (bufLength);
-        _currentFrameData = malloc(bufLength);
-
+        _currentFrameData = ::operator new (bufLength);
         return true;
     }
 
@@ -348,8 +345,7 @@ namespace lirs {
 
         if (_currentFrameData) {
             // note deleting *void
-//            delete (uint8_t*) _currentFrameData;
-            free(_currentFrameData);
+            delete (uint8_t*) _currentFrameData;
         }
     }
 

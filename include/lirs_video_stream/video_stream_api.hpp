@@ -222,7 +222,7 @@ namespace lirs {
         auto format = v4l2_format();
 
         format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        format.fmt.pix.field = V4L2_FIELD_INTERLACED;
+        format.fmt.pix.field = V4L2_FIELD_BOTTOM;
         format.fmt.pix.pixelformat = _palette;
         format.fmt.pix.height = _height;
         format.fmt.pix.width = _width;
@@ -573,6 +573,7 @@ namespace lirs {
     bool V4L2Capture::isOpened() const {
       return _deviceHandle != -1 && !_deviceName.empty();
     }
+
 }
 
 #endif //V4L2VIDEO_STREAMER_V4L2CAPTURE_H

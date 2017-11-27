@@ -48,7 +48,7 @@ int main(int argc, char **argv)
   ros::NodeHandle _nh("~");
 
   image_transport::ImageTransport it(nh);
-  image_transport::CameraPublisher pub = it.advertiseCamera("image_raw", 1);
+  image_transport::CameraPublisher pub = it.advertiseCamera("image", 1);
 
   std::string deviceName;
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
   std::string cameraInfoUrl;
 
   _nh.getParam("camera_info_url", cameraInfoUrl);
-  ROS_INFO_STREAM("Camera meta info url: " << cameraInfoUrl);
+  ROS_INFO_STREAM("Camera info url: " << cameraInfoUrl);
 
   int width;
   int height;
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
   msg->width  = cap.getWidth();
   msg->step   = cap.getStep();
   msg->is_bigendian = false;
-  msg->encoding     = sensor_msgs::image_encodings::BAYER_GRBG8;
+  msg->encoding     = imageFormat;
 
   msg->data.resize(cap.getStep() * cap.getHeight());
   msg->header = header;

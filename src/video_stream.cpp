@@ -139,6 +139,7 @@ int main(int argc, char **argv)
         if (cam_info_msg.distortion_model.empty()) {
           cam_info_msg = getDefaultCAMInfo(msg);
           cam_info_manager.setCameraInfo(cam_info_msg);
+          ROS_INFO("Warning");
         }
 
         pub.publish(*msg, cam_info_msg, ros::Time::now());

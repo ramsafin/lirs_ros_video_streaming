@@ -1,0 +1,19 @@
+<launch>
+    <arg name="frame_rate" value ="30"/>
+    <arg name="camera_name" value ="webcam"/>
+
+    <!-- video streaming node -->
+    <include file="$(find lirs_ros_video_streaming)/launch/camera.launch">
+        <arg name="fps" value="$(arg frame_rate)"/>
+        <arg name="camera_name" value="$(arg camera_name)"/>
+    </include>
+
+    <!-- hz test node -->
+    <test test-name="video_streamer_hztest" pkg="rostest" type="hztest" name="video_streamer_hz">
+        <param name="topic" value="$(arg camera_name)/image_raw"/>
+        <param name="hz" value="$(arg frame_rate)"/>
+        <param name="hzerror" value="0.5"/>
+        <param name="test_duration" value="10.0"/>
+    </test>
+
+</launch>

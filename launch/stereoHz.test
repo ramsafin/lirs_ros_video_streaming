@@ -1,0 +1,32 @@
+<launch>
+    <arg name="frame_rate" value ="30"/>
+    <arg name="stereo_name" value="stereo_test"/>
+    <arg name="left_device_name" value="/dev/video0"/>
+    <arg name="right_device_name" value="/dev/video1"/>
+    <arg name="image_format" value="yuv422"/>
+
+
+    <!-- stereo video streaming -->
+    <include file="$(find lirs_ros_video_streaming)/launch/stereo.launch">
+        <arg name="fps" value="$(arg frame_rate)"/>
+        <arg name="stereo_name" value="$(arg stereo_name)"/>
+        <arg name="left_device_name" value="$(arg left_device_name)"/>
+        <arg name="right_device_name" value="$(arg right_device_name)"/>
+        <arg name="image_format" value="$(arg image_format)"/>
+    </include>
+
+    <!-- hz tests for left and right cameras -->
+    <test test-name="left_video_streamer_hztest" pkg="rostest" type="hztest" name="left_video_streamer_hz">
+        <param name="topic" value="$(arg stereo_name)/left/image_raw"/>
+        <param name="hz" value="$(arg frame_rate)"/>
+        <param name="hzerror" value="0.5"/>
+        <param name="test_duration" value="10.0"/>
+    </test>
+
+    <test test-name="right_video_streamer_hztest" pkg="rostest" type="hztest" name="right_video_streamer_hz">
+        <param name="topic" value="$(arg stereo_name)/right/image_raw"/>
+        <param name="hz" value="$(arg frame_rate)"/>
+        <param name="hzerror" value="0.5"/>
+        <param name="test_duration" value="10.0"/>
+    </test>
+</launch>

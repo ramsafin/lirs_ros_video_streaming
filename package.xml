@@ -1,28 +1,29 @@
 <?xml version="1.0"?>
 <package>
-  <name>lirs_video_stream</name>
-  <version>0.1.0</version>
-  <description>Video streaming package</description>
+    <name>lirs_ros_video_streaming</name>
+    <version>1.0.0</version>
+    <description>V4L2 based video streaming ROS package</description>
 
-  <license>MIT</license>
+    <license>MIT</license>
 
-  <maintainer email="RamilSafNab1996@gmail.com">Safin Ramil</maintainer>
+    <maintainer email="safin.ramil@it.kfu.ru">Ramil Safin</maintainer>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>camera_info_manager</build_depend>
-  <build_depend>sensor_msgs</build_depend>
+    <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>roscpp</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>camera_info_manager</run_depend>
-  <run_depend>sensor_msgs</run_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>cv_bridge</build_depend>
+    <build_depend>sensor_msgs</build_depend>
+    <build_depend>image_transport</build_depend>
+    <build_depend>camera_info_manager</build_depend>
 
+    <run_depend>roscpp</run_depend>
+    <run_depend>cv_bridge</run_depend>
+    <run_depend>sensor_msgs</run_depend>
+    <run_depend>image_transport</run_depend>
+    <run_depend>camera_info_manager</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-  <!-- Other tools can request additional information be placed here -->
-
-  </export>
+    <!-- The export tag contains other, unspecified, tags -->
+    <export>
+        <!-- Other tools can request additional information be placed here -->
+    </export>
 </package>

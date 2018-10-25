@@ -1,55 +1,78 @@
 <launch>
 
-    <arg name="camera_name" default="stereo" />
-    <arg name="device_name" default="/dev/video1" />
-    <arg name="fps" default="30" />
-    <arg name="frame_id" default="$(arg camera_name)" />
-    <arg name="camera_info_url" default="" />
-    <arg name="width" default="744" />
-    <arg name="height" default="480" />
-    <arg name="image_format" default="bayer_gbrg8" />
-    <arg name="show" default="true" />
+    <arg name="stereo_name" default="stereo"/>
+    <arg name="left_camera_name" default="left"/>
+    <arg name="right_camera_name" default="right"/>
 
-    <group ns="$(arg camera_name)">
+    <arg name="left_device_name" default="/dev/video0"/>
+    <arg name="right_device_name" default="/dev/video1"/>
 
-        <group ns="left">
-            <node pkg="lirs_video_stream" type="video_stream" name="$(arg camera_name)_video_stream" output="screen">
-                <param name="camera_name" type="string" value="$(arg camera_name)" />
-                <param name="device_name" type="string" value="/dev/v4l/by-id/usb-The_Imaging_Source_Europe_GmbH_DFM_22BUC03-ML_03610446-video-index0" />
-                <param name="fps" type="int" value="$(arg fps)" />
-                <param name="frame_id" type="string" value="$(arg frame_id)" />
-                <param name="camera_info_url" type="string" value="$(arg camera_info_url)" />
-                <param name="width" type="int" value="$(arg width)" />
-                <param name="height" type="int" value="$(arg height)" />
-                <param name="image_format" type="string" value="$(arg image_format)" />
-                 <remap from="image" to="image_raw" />
+    <arg name="left_camera_info_url" default=""/>
+    <arg name="right_camera_info_url" default=""/>
+
+    <arg name="fps" default="30"/>
+    <arg name="width" default="640"/>
+    <arg name="height" default="480"/>
+    <arg name="image_format" default="yuv422"/>
+
+    <!-- stereo image view -->
+    <arg name="stereo_view_enabled" default="false"/>
+    <arg name="stereo_view_topic" default="image_raw"/>
+
+    <!-- stereo image processing -->
+    <arg name="stereo_proc_enabled" default="false"/>
+
+    <group ns="$(arg stereo_name)">
+
+        <!--left camera -->
+        <group ns="$(arg left_camera_name)">
+
+            <!-- video streaming node -->
+            <node pkg="lirs_ros_video_streaming" type="video_streamer" name="$(arg left_camera_name)_video_streamer">
+                <param name="camera_name" type="string" value="$(arg left_camera_name)"/>
+                <param name="device_name" type="string" value="$(arg left_device_name)"/>
+                <param name="fps" type="int" value="$(arg fps)"/>
+                <param name="frame_id" type="string" value="$(arg left_camera_name)_frame_id"/>
+                <param name="camera_info_url" type="string" value="$(arg left_camera_info_url)"/>
+                <param name="width" type="int" value="$(arg width)"/>
+                <param name="height" type="int" value="$(arg height)"/>
+                <param name="image_format" type="string" value="$(arg image_format)"/>
+                <remap from="image" to="image_raw"/>
             </node>
-
-            <node if="$(arg show)" name="image_view" pkg="image_view" type="image_view">
-                <remap from="image" to="image_raw" />
-            </node>
-
         </group>
 
-        <group ns="right">
-            <node pkg="lirs_video_stream" type="video_stream" name="$(arg camera_name)_video_stream" output="screen">
-                <param name="camera_name" type="string" value="$(arg camera_name)" />
-                <param name="device_name" type="string" value="/dev/v4l/by-id/usb-The_Imaging_Source_Europe_GmbH_DFM_22BUC03-ML_03610453-video-index0" />
-                <param name="fps" type="int" value="$(arg fps)" />
-                <param name="frame_id" type="string" value="$(arg frame_id)" />
-                <param name="camera_info_url" type="string" value="$(arg camera_info_url)" />
-                <param name="width" type="int" value="$(arg width)" />
-                <param name="height" type="int" value="$(arg height)" />
-                <param name="image_format" type="string" value="$(arg image_format)" />
-                <remap from="image" to="image_raw" />
-            </node>
+        <!--right camera -->
+        <group ns="$(arg right_camera_name)">
 
-            <node if="$(arg show)" name="image_view" pkg="image_view" type="image_view">
-                <remap from="image" to="image_raw" />
+            <!-- video streaming node -->
+            <node pkg="lirs_ros_video_streaming" type="video_streamer" name="$(arg right_camera_name)_video_streamer">
+                <param name="camera_name" type="string" value="$(arg right_camera_name)"/>
+                <param name="device_name" type="string" value="$(arg right_device_name)"/>
+                <param name="fps" type="int" value="$(arg fps)"/>
+                <param name="frame_id" type="string" value="$(arg right_camera_name)_frame_id"/>
+                <param name="camera_info_url" type="string" value="$(arg right_camera_info_url)"/>
+                <param name="width" type="int" value="$(arg width)"/>
+                <param name="height" type="int" value="$(arg height)"/>
+                <param name="image_format" type="string" value="$(arg image_format)"/>
+                <remap from="image" to="image_raw"/>
             </node>
-
         </group>
 
+        <!-- stereo image processing -->
+        <node if="$(arg stereo_proc_enabled)" name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc">
+            <env name="ROS_NAMESPACE" value="$(arg stereo_name)"/>
+            <param name="approximate_sync" type="bool" value="true"/>
+        </node>
     </group>
 
+    <!-- stereo image view (start only with stereo_image_proc) -->
+    <node if="$(eval stereo_view_enabled and stereo_proc_enabled)" name="image_view" pkg="image_view" type="stereo_view">
+        <remap from="image" to="$(arg stereo_view_topic)"/>
+        <remap from="stereo" to="$(arg stereo_name)"/>
+        <param name="approximate_sync" type="bool" value="true"/>
+    </node>
+
+    <!-- transform -->
+    <node name="tf" pkg="tf" type="static_transform_publisher"
+          args="0 0 0 -1.5707963267948966 0 0 -1.5707963267948966 base_link $(arg left_camera_name)_frame_id 100"/>
 </launch>

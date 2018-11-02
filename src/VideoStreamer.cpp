@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     auto imageMsg = lirs::ros_utils::imageMessageFrom(frameId, imageFormat, capture);
 
     while (ros::ok()) {
-        if (publisher.getNumSubscribers() >= 0) {
+        if (publisher.getNumSubscribers() > 0) {
             // no cameraInfoUrl is provided
             if (cameraInfoMsg.distortion_model.empty()) {
                 cameraInfoMsg = lirs::ros_utils::defaultCameraInfoFrom(imageMsg);

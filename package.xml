@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <package>
     <name>lirs_ros_video_streaming</name>
+    <description>Video Streaming ROS Package based on Video4Linux2 API</description>
     <version>1.0.0</version>
-    <description>V4L2 based video streaming ROS package</description>
 
     <license>MIT</license>
 
-    <maintainer email="safin.ramil@it.kfu.ru">Ramil Safin</maintainer>
+    <maintainer email="ramilsafnab1996@gmail.com">Ramil Safin</maintainer>
 
     <buildtool_depend>catkin</buildtool_depend>
 

@@ -22,16 +22,9 @@ sudo apt-get install v4l-utils
 ### ROS Kinetic
 [Manually](http://wiki.ros.org/kinetic/Installation/Ubuntu) or using [ansible playbook](https://github.com/chupakabra1996/ansible-ros-kinetic-playbook)
 
-## Limitations and Issues
-- `YUV422` image format in ROS Kinetic represents `UYVY` format (other formats does not supported, e.g. `YUYV`).
-Thus, currently not supported formats are converted into **greyscale**.
-
-- No synchronization between multiple cameras (e.g. in case of stereo systems).
-- Published frames timestamp is represented by ROS Time (not native driver's timestamp).
-
 ## Getting Started
 
-To download the latest available release, clone the repository into your _catkin workspace_:
+To download the latest available release, clone the repository into your _catkin workspace_ (e.g. `~/catkin_ws`):
 ```shell
 cd ~/catkin_ws/src && git clone https://github.com/chupakabra1996/lirs_ros_video_streaming.git
 ```
@@ -41,7 +34,7 @@ Build ROS package:
 cd ~/catkin_ws && catkin_make --pkg lirs_ros_video_streaming
 ```
 
-Run tests (`Note!` Change parameters in launch files):
+Run tests (`Note!` Change parameters in [launch file](launch/camera.launch)):
 ```shell
 rostest lirs_ros_video_streaming cameraHz.test
 ```
@@ -88,6 +81,14 @@ rostest lirs_ros_video_streaming cameraHz.test
   
 </launch>
 ```
+
+## Limitations and Issues
+- `YUV422` image format in ROS Kinetic represents `UYVY` format (other formats does not supported, e.g. `YUYV`).
+Thus, currently not supported formats are converted into **greyscale**.
+
+- No synchronization between multiple cameras (e.g. in case of stereo systems).
+- Published frames timestamp is represented by ROS Time (not native driver's timestamp).
+- No captured frames queue.
 
 ## Paper
 

@@ -84,11 +84,13 @@ rostest lirs_ros_video_streaming cameraHz.test
 
 ## Limitations and Issues
 - `YUV422` image format in ROS Kinetic represents `UYVY` format (other formats does not supported, e.g. `YUYV`).
-Thus, currently not supported formats are converted into **greyscale**.
+Thus, those frames are converted into **greyscale**, as it is computationally easier compared to the conversion into `RGB`.
 
 - No synchronization between multiple cameras (e.g. in case of stereo systems).
+
 - Published frames timestamp is represented by ROS Time (not native driver's timestamp).
-- No captured frames queue.
+
+- Captured frames are not queued and potentially can slow down overall streaming performance.
 
 ## Paper
 

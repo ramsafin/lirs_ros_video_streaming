@@ -1,0 +1,24 @@
+image: ros:kinetic-robot
+
+variables:
+  ROS_PACKAGES_TO_INSTALL: ""
+
+cache:
+  paths:
+    - ccache/
+
+before_script:
+ - git clone https://github.com/chupakabra1996/lirs_ros_video_streaming.git
+ - source lirs_ros_video_streaming/gitlab-ci.bash >/dev/null
+
+# catkin_make
+catkin_make:
+  stage: build
+  script:
+    - catkin_make
+
+# catkin tools
+catkin_tools:
+  stage: build
+  script:
+    - catkin build --summarize --no-status --force-color

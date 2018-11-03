@@ -41,6 +41,8 @@ rostest lirs_ros_video_streaming cameraHz.test
 
 ## Example (launch file)
 
+The following ROS launch file will start ROS _master node_ along with _video_streamer node_.
+
 ```xml
 <launch>
   
@@ -83,8 +85,8 @@ rostest lirs_ros_video_streaming cameraHz.test
 ```
 
 ## Limitations and Issues
-- `YUV422` image format in ROS Kinetic represents `UYVY` format (other formats does not supported, e.g. `YUYV`).
-Thus, those frames are converted into **greyscale**, as it is computationally easier compared to the conversion into `RGB`.
+- **YUV422** image format in ROS Kinetic represents **UYVY** format (other formats does not supported, e.g. **YUYV**).
+In this case frames are converted into **greyscale** format, as it is computationally easier compared to the conversion into **RGB**.
 
 - No synchronization between multiple cameras (e.g. in case of stereo systems).
 

@@ -10,15 +10,16 @@ cache:
 before_script:
  - git clone https://gitlab.com/VictorLamoine/ros_gitlab_ci.git
  - source ros_gitlab_ci/gitlab-ci.bash >/dev/null
+ - sudo add-apt-repository ppa:ubuntu-toolchain-r/test && sudo apt-get update && sudo apt-get install gcc-7 g++-7
 
 # catkin_make
 catkin_make:
   stage: build
   script:
-    - catkin_make
+    - CC=gcc-7 && CXX=g++-7 catkin_make
 
 # catkin tools
-catkin_tools:
-  stage: build
-  script:
-    - catkin build --summarize --no-status --force-color
+# catkin_tools:
+#   stage: build
+#   script:
+#     - CC=gcc-7 && CXX=g++-7 catkin build --summarize --no-status --force-color

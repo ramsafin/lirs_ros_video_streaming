@@ -8,8 +8,8 @@ cache:
     - ccache/
 
 before_script:
- - git clone https://github.com/chupakabra1996/lirs_ros_video_streaming.git
- - source lirs_ros_video_streaming/gitlab-ci.bash >/dev/null
+ - git clone https://gitlab.com/VictorLamoine/ros_gitlab_ci.git
+ - source ros_gitlab_ci/gitlab-ci.bash >/dev/null
 
 # catkin_make
 catkin_make:

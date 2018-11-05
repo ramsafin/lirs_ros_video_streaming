@@ -20,7 +20,7 @@ Install v4l-utils apt package:
 sudo apt-get install v4l-utils
 ```
 ### ROS Kinetic
-[Manually](http://wiki.ros.org/kinetic/Installation/Ubuntu) or using [ansible playbook](https://github.com/chupakabra1996/ansible-ros-kinetic-playbook)
+[Manually](http://wiki.ros.org/kinetic/Installation/Ubuntu) or using [ansible playbook](https://github.com/chupakabra1996/ansible-ros-kinetic-playbook).
 
 ## Getting Started
 

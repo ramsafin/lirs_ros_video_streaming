@@ -6,7 +6,7 @@ It is written in C++17 and provides clear API.
 
 ## Prerequisites
 
-- Ubuntu 16.04 (Xenial) OS
+- Ubuntu 16.04 (Xenial)
 - ROS Kinetic
 - OpenCV 3 (comes with ROS)
 - GNU GCC (with C++17 support) 

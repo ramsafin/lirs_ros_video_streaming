@@ -1,0 +1,27 @@
+# C++17 support
+image: ros:melodic-robot
+
+variables:
+  ROS_PACKAGES_TO_INSTALL: ""
+
+cache:
+  paths:
+    - ccache/
+
+before_script:
+ - git clone https://gitlab.com/VictorLamoine/ros_gitlab_ci.git
+ - source ros_gitlab_ci/gitlab-ci.bash >/dev/null
+ - gcc -v
+ - uname -a
+
+# catkin_make
+catkin_make:
+  stage: build
+  script:
+    - catkin_make
+
+# catkin tools
+# catkin_tools:
+#   stage: build
+#   script:
+#     - CC=gcc-7 && CXX=g++-7 catkin build --summarize --no-status --force-color

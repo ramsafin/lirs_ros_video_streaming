@@ -181,9 +181,9 @@ int main(int argc, char **argv) {
     // NOTE: Image message format may differ from the image format (see imageMessageFrom() method).
     auto imageMsg = lirs::ros_utils::imageMessageFrom(frameId, imageFormat, capture);
 
-    while (ros::ok()) {
+    while (nodeHandle.ok()) {
         if (publisher.getNumSubscribers() > 0) {
-            // no cameraInfoUrl is provided
+            // if no cameraInfoUrl is provided
             if (cameraInfoMsg.distortion_model.empty()) {
                 cameraInfoMsg = lirs::ros_utils::defaultCameraInfoFrom(imageMsg);
                 cameraInfoManager.setCameraInfo(cameraInfoMsg);

@@ -6,7 +6,7 @@ It is written in C++17 and provides clear API.
 
 ## Prerequisites
 
-- Ubuntu 16.04 (Xenial) OS
+- Ubuntu 16.04 (Xenial)
 - ROS Kinetic
 - OpenCV 3 (comes with ROS)
 - GNU GCC (with C++17 support) 
@@ -20,7 +20,7 @@ Install v4l-utils apt package:
 sudo apt-get install v4l-utils
 ```
 ### ROS Kinetic
-[Manually](http://wiki.ros.org/kinetic/Installation/Ubuntu) or using [ansible playbook](https://github.com/chupakabra1996/ansible-ros-kinetic-playbook)
+[Manually](http://wiki.ros.org/kinetic/Installation/Ubuntu) or using [ansible playbook](https://github.com/chupakabra1996/ansible-ros-kinetic-playbook).
 
 ## Getting Started
 
@@ -40,6 +40,8 @@ rostest lirs_ros_video_streaming cameraHz.test
 ```
 
 ## Example (launch file)
+
+The following ROS launch file will start ROS _master node_ along with _video_streamer node_.
 
 ```xml
 <launch>
@@ -83,12 +85,14 @@ rostest lirs_ros_video_streaming cameraHz.test
 ```
 
 ## Limitations and Issues
-- `YUV422` image format in ROS Kinetic represents `UYVY` format (other formats does not supported, e.g. `YUYV`).
-Thus, currently not supported formats are converted into **greyscale**.
+- **YUV422** image format in ROS Kinetic represents **UYVY** (other formats does not supported, e.g. **YUYV**).
+In this case frames are converted into **greyscale** format, as it is computationally less demanded compared to the conversion into an **RGB**.
 
 - No synchronization between multiple cameras (e.g. in case of stereo systems).
+
 - Published frames timestamp is represented by ROS Time (not native driver's timestamp).
-- No captured frames queue.
+
+- Captured frames are not queued and potentially can be lost during streaming.
 
 ## Paper
 

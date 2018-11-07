@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
     }
 
     if (!capture.StartStreaming()) {
-        ROS_ERROR_STREAM("Couldn't start streaming on: " << deviceName);
+        ROS_ERROR_STREAM("Couldn't start streaming on: " << deviceName << ". Check streaming parameters.");
         return -1;
     }
 

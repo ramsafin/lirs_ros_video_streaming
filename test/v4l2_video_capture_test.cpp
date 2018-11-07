@@ -37,74 +37,74 @@ using std::string_literals::operator ""s;
 
 TEST(VideoCaptureUtilsTestCase, OpenCloseHandleShouldPass) {
     auto device = "/dev/video0"s;
-    auto handle = lirs::utils::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(device);
 
     EXPECT_TRUE(handle > 0);
-    EXPECT_TRUE(lirs::utils::V4L2Utils::close_handle(handle));
+    EXPECT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureUtilsTestCase, CloseClosedHandleShouldPass) {
     auto device = "/dev/video0"s;
-    EXPECT_FALSE(lirs::utils::V4L2Utils::close_handle(lirs::constants::CLOSED_HANDLE));
+    EXPECT_FALSE(lirs::V4L2Utils::close_handle(lirs::V4L2Constants::CLOSED_HANDLE));
 }
 
 TEST(VideoCaptureUtilsTestCase, GetFrameRateShouldPass) {
     auto device = "/dev/video0"s;
 
-    auto handle = lirs::utils::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(device);
 
-    ASSERT_TRUE(handle != lirs::constants::CLOSED_HANDLE);
+    ASSERT_TRUE(handle != lirs::V4L2Constants::CLOSED_HANDLE);
 
-    auto frameRate = lirs::utils::V4L2Utils::v4l2_get_frame_rate(handle);
+    auto frameRate = lirs::V4L2Utils::v4l2_get_frame_rate(handle);
 
     EXPECT_TRUE(frameRate.has_value());
-    ASSERT_TRUE(lirs::utils::V4L2Utils::close_handle(handle));
+    ASSERT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureUtilsTestCase, SetFrameRateShouldPass) {
     auto device = "/dev/video0"s;
 
-    auto handle = lirs::utils::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(device);
 
     ASSERT_TRUE(handle > 0);
 
     auto den = 30u;
     auto num = 1u;
 
-    auto frameRate = lirs::utils::V4L2Utils::v4l2_set_frame_rate(handle, num, den);
+    auto frameRate = lirs::V4L2Utils::v4l2_set_frame_rate(handle, num, den);
 
     ASSERT_TRUE(frameRate.has_value());
     EXPECT_EQ(frameRate->parm.capture.timeperframe.numerator, num);
     EXPECT_EQ(frameRate->parm.capture.timeperframe.denominator, den);
 
-    ASSERT_TRUE(lirs::utils::V4L2Utils::close_handle(handle));
+    ASSERT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureUtilsTestCase, CaptureGetFormatShouldPass) {
     auto device = "/dev/video0"s;
 
-    auto handle = lirs::utils::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(device);
 
     ASSERT_TRUE(handle > 0);
 
-    auto format = lirs::utils::V4L2Utils::v4l2_get_format(handle);
+    auto format = lirs::V4L2Utils::v4l2_get_format(handle);
 
     EXPECT_TRUE(format);
-    ASSERT_TRUE(lirs::utils::V4L2Utils::close_handle(handle));
+    ASSERT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureUtilsTestCase, SetAndTryFormatShouldPass) {
     auto device = "/dev/video0"s;
 
-    auto handle = lirs::utils::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(device);
 
     ASSERT_TRUE(handle > 0);
 
-    EXPECT_FALSE(lirs::utils::V4L2Utils::v4l2_try_format(handle, V4L2_PIX_FMT_H264, 244, 333));
+    EXPECT_FALSE(lirs::V4L2Utils::v4l2_try_format(handle, V4L2_PIX_FMT_H264, 244, 333));
 
     auto width = 640u;
     auto height = 480u;
-    auto tryFormat = lirs::utils::V4L2Utils::v4l2_try_format(handle, V4L2_PIX_FMT_YUYV, width, height);
+    auto tryFormat = lirs::V4L2Utils::v4l2_try_format(handle, V4L2_PIX_FMT_YUYV, width, height);
 
     ASSERT_TRUE(tryFormat.has_value());
 
@@ -112,22 +112,22 @@ TEST(VideoCaptureUtilsTestCase, SetAndTryFormatShouldPass) {
     EXPECT_EQ(tryFormat->fmt.pix.width, width);
     EXPECT_EQ(tryFormat->fmt.pix.height, height);
 
-    EXPECT_TRUE(lirs::utils::V4L2Utils::v4l2_set_format(handle, tryFormat->fmt.pix.pixelformat,
+    EXPECT_TRUE(lirs::V4L2Utils::v4l2_set_format(handle, tryFormat->fmt.pix.pixelformat,
                                              tryFormat->fmt.pix.width, tryFormat->fmt.pix.height));
 
-    ASSERT_TRUE(lirs::utils::V4L2Utils::close_handle(handle));
+    ASSERT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureTestCase, GetPixelFormatsShouldNotReturnEmptySet) {
     auto device = "/dev/video0"s;
-    auto handle = lirs::utils::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(device);
 
-    ASSERT_TRUE(handle != lirs::constants::CLOSED_HANDLE);
+    ASSERT_TRUE(handle != lirs::V4L2Constants::CLOSED_HANDLE);
 
-    auto pixelFormats = lirs::utils::V4L2Utils::v4l2_query_pixel_formats(handle);
+    auto pixelFormats = lirs::V4L2Utils::v4l2_query_pixel_formats(handle);
 
     EXPECT_FALSE(pixelFormats.empty());
-    ASSERT_TRUE(lirs::utils::V4L2Utils::close_handle(handle));
+    ASSERT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureTestCase, V4L2CaptureConstructionShouldPass) {
@@ -154,11 +154,11 @@ TEST(VideoCaptureTestCase, NonStreamingCaptureShouldPass) {
 TEST(VideoCaptureTestCase, DefaultParamsShouldBeSetCorrectly) {
     lirs::V4L2Capture capture("/dev/video0");
 
-    EXPECT_EQ(capture.Get(lirs::CaptureParam::BUFFER_SIZE), lirs::defaults::DEFAULT_V4L2_BUFFER_SIZE);
-    EXPECT_EQ(capture.Get(lirs::CaptureParam::PIX_FMT), lirs::defaults::DEFAULT_V4L2_PIXEL_FORMAT);
-    EXPECT_EQ(capture.Get(lirs::CaptureParam::FPS), lirs::defaults::DEFAULT_FRAME_RATE);
-    EXPECT_EQ(capture.Get(lirs::CaptureParam::HEIGHT), lirs::defaults::DEFAULT_HEIGHT);
-    EXPECT_EQ(capture.Get(lirs::CaptureParam::WIDTH), lirs::defaults::DEFAULT_WIDTH);
+    EXPECT_EQ(capture.Get(lirs::CaptureParam::BUFFER_SIZE), lirs::V4L2Defaults::DEFAULT_V4L2_BUFFER_SIZE);
+    EXPECT_EQ(capture.Get(lirs::CaptureParam::PIX_FMT), lirs::V4L2Defaults::DEFAULT_V4L2_PIXEL_FORMAT);
+    EXPECT_EQ(capture.Get(lirs::CaptureParam::FPS), lirs::V4L2Defaults::DEFAULT_FRAME_RATE);
+    EXPECT_EQ(capture.Get(lirs::CaptureParam::HEIGHT), lirs::V4L2Defaults::DEFAULT_HEIGHT);
+    EXPECT_EQ(capture.Get(lirs::CaptureParam::WIDTH), lirs::V4L2Defaults::DEFAULT_WIDTH);
 }
 
 TEST(VideoCaptureTestCase, CaptureConstructorParamsShouldBeSetCorrectly) {
@@ -295,7 +295,7 @@ TEST(VideoCaptureTestCase, ExceededCaptureBufferSizeShouldBeValidated) {
 
     EXPECT_TRUE(capture.IsOpened());
     EXPECT_FALSE(capture.Set(lirs::CaptureParam::BUFFER_SIZE, 50));  // incorrect buffer size
-    EXPECT_EQ(capture.Get(lirs::CaptureParam::BUFFER_SIZE), lirs::defaults::DEFAULT_V4L2_BUFFER_SIZE);
+    EXPECT_EQ(capture.Get(lirs::CaptureParam::BUFFER_SIZE), lirs::V4L2Defaults::DEFAULT_V4L2_BUFFER_SIZE);
 }
 
 TEST(VideoCaptureTestCase, FrameRateShouldBeChanged) {

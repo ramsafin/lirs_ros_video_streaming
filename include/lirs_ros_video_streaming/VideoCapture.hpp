@@ -35,17 +35,16 @@
 #include "linux/videodev2.h"
 
 namespace lirs {
-
-    namespace defaults {
-        /**
-         * Default capturing parameters.
-         */
+    /**
+     * Default capturing parameters.
+     */
+    struct V4L2Defaults {
         static constexpr auto DEFAULT_WIDTH = 640u;
         static constexpr auto DEFAULT_HEIGHT = 480u;
         static constexpr auto DEFAULT_FRAME_RATE = 30u;
         static constexpr auto DEFAULT_V4L2_PIXEL_FORMAT = V4L2_PIX_FMT_YUYV;  /* v4l2 pixel format */
         static constexpr auto DEFAULT_V4L2_BUFFER_SIZE = 4u;  /* v4l2 buffer size (number of buffer elements) */
-    }  // namespace defaults
+    };
 
     /**
      * @brief Captured video data, i.e. images.

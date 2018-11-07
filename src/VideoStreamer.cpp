@@ -43,7 +43,7 @@
 
 namespace lirs {
     namespace ros_utils {
-        static sensor_msgs::CameraInfo defaultCameraInfoFrom(sensor_msgs::ImagePtr img) {
+        static sensor_msgs::CameraInfo defaultCameraInfoFrom(sensor_msgs::ImagePtr const &img) {
             sensor_msgs::CameraInfo cam_info_msg;
             cam_info_msg.header.frame_id = img->header.frame_id;
             cam_info_msg.width = img->width;
@@ -90,6 +90,7 @@ namespace lirs {
 
         static sensor_msgs::ImagePtr imageMessageFrom(std::string const &frameId, std::string const &imageFormat,
                                                       lirs::VideoCapture const &capture) {
+            
             auto imageMsg = boost::make_shared<sensor_msgs::Image>();
             imageMsg->header.frame_id = frameId;
             imageMsg->width = capture.Get(lirs::CaptureParam::WIDTH);

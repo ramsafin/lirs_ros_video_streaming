@@ -34,6 +34,7 @@ catkin_package()
 include_directories(include ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 add_library(v4l2-capture STATIC
+        include/lirs_ros_video_streaming/V4L2Utils.hpp
         include/lirs_ros_video_streaming/VideoCapture.hpp
         include/lirs_ros_video_streaming/V4L2VideoCapture.hpp
         src/V4L2VideoCapture.cpp)

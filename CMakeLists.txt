@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(lirs_ros_video_streaming)
+project(lirs_ros_video_streaming VERSION 1.0.0 LANGUAGES C CXX)
 
 # Enable c++17
 include(CheckCXXCompilerFlag)
@@ -8,7 +8,7 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++1z" COMPILER_SUPPORTS_CXX17)
 
 if (COMPILER_SUPPORTS_CXX17)
-    set(CMAKE_CXX_FLAGS "-std=c++1z -Wall -g")
+    set(CMAKE_CXX_FLAGS "-std=c++1z -Wall -g -Wextra")
 else ()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
 endif ()

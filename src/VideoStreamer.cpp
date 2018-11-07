@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nodeHandle_{"~"};
 
     auto imageTransport = image_transport::ImageTransport{nodeHandle};
-    auto publisher = imageTransport.advertiseCamera("image", 4);
+    auto publisher = imageTransport.advertiseCamera("image", 10);
 
     // get and validate capture parameters
 
@@ -142,9 +142,9 @@ int main(int argc, char **argv) {
     nodeHandle_.param("camera_name", cameraName, "camera"s);
     nodeHandle_.param("frame_id", frameId, "frame_id"s);
     nodeHandle_.param("camera_info_url", cameraInfoUrl, ""s);
-    nodeHandle_.param("width", width, static_cast<int>(lirs::defaults::DEFAULT_WIDTH));
-    nodeHandle_.param("height", height, static_cast<int> (lirs::defaults::DEFAULT_HEIGHT));
-    nodeHandle_.param("fps", frameRate, static_cast<int>(lirs::defaults::DEFAULT_FRAME_RATE));
+    nodeHandle_.param("width", width, 640);
+    nodeHandle_.param("height", height, 480);
+    nodeHandle_.param("fps", frameRate, 30);
     nodeHandle_.param("image_format", imageFormat, sensor_msgs::image_encodings::YUV422);
 
     // checking image format

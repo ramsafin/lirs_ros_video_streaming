@@ -331,6 +331,29 @@ TEST(VideoCaptureTestCase, CaptureImageStepAndSizeAreSetCorrectly) {
     EXPECT_EQ(capture.imageSize(), capture.Get(lirs::CaptureParam::WIDTH) * capture.Get(lirs::CaptureParam::HEIGHT) * 2);
 }
 
+TEST(VideoCaptureTestCase, BuggyCameraShouldPass) {
+    lirs::V4L2Capture capture("/dev/v4l/by-id/usb-Twiga_TWIGACam-video-index0");
+
+    ASSERT_TRUE(capture.IsOpened());
+
+    capture.Set(lirs::CaptureParam::FPS, 50);
+    capture.Set(lirs::CaptureParam::WIDTH, 1280);
+    capture.Set(lirs::CaptureParam::HEIGHT, 720);
+    capture.Set(lirs::CaptureParam::PIX_FMT, V4L2_PIX_FMT_YUYV);
+    capture.Set(lirs::CaptureParam::BUFFER_SIZE, 4);
+
+    ASSERT_TRUE(capture.StartStreaming());
+
+    // corrupted v4l2 buffers
+    EXPECT_FALSE(capture.ReadFrame());
+    EXPECT_FALSE(capture.ReadFrame());
+    EXPECT_FALSE(capture.ReadFrame());
+    EXPECT_FALSE(capture.ReadFrame());
+
+    auto buffer = capture.ReadFrame();
+    ASSERT_TRUE(buffer);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

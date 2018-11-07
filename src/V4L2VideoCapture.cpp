@@ -191,8 +191,6 @@ namespace lirs {
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
 
-        // get into streaming mode firstly querying the allocated buffers
-
         for (buffer.index = 0; buffer.index < Get(CaptureParam::BUFFER_SIZE); ++buffer.index) {
             if (utils::V4L2Utils::xioctl(handle_, VIDIOC_QBUF, &buffer) == -1) {
                 std::cerr << "ERROR: VIDIOC_QBUF  - " << strerror(errno) << '\n';
@@ -204,6 +202,7 @@ namespace lirs {
             std::cerr << "ERROR: Cannot enable streaming mode - " << strerror(errno) << '\n';
             return false;
         }
+
         isStreaming_ = true;
 
         return true;
@@ -256,7 +255,7 @@ namespace lirs {
             return utils::V4L2Utils::v4l2_check_input_capabilities(handle_)
                    && utils::V4L2Utils::v4l2_check_capabilities(caps.value(), requiredCapabilities);
         }
-        
+
         return true;
     }
 
@@ -265,27 +264,44 @@ namespace lirs {
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
 
-        // read a frame from the driver's outgoing queue
+        int res = 0;  // dequerying status
 
-        if (utils::V4L2Utils::xioctl(handle_, VIDIOC_DQBUF, &buffer) == -1) {
+        // dequery v4l2 buffers from the driver's outgoing queue
+
+        while ((res = utils::V4L2Utils::xioctl(handle_, VIDIOC_DQBUF, &buffer)) < 0 && (errno == EINTR));
+
+        if (res < 0) {
             switch (errno) {
                 case EAGAIN:
                     std::cerr << "WARNING: Device is not ready for reading" << strerror(errno) << '\n';
-                    [[fallthrough]]
+                    return std::nullopt;
                 case EIO:
                     std::cerr << "ERROR: I/O error while reading - " << strerror(errno) << '\n';
-                    [[fallthrough]]
+                    return std::nullopt;
                 default:
                     std::cerr << "ERROR: VIDIOC_DQBUF - " << strerror(errno) << '\n';
                     return std::nullopt;
             }
         }
 
-        auto bufferData = static_cast<uint8_t *>(internalBuffer_[buffer.index].data);
-        auto timestamp = buffer.timestamp;  // TODO (Ramil Safin): Convert frame timestamp into absolute time.
-        auto bufferSize = buffer.bytesused;
+        // skip corrupted v4l2 buffers
 
-        Frame frame{bufferData, bufferSize};  // copy buffer
+        if (buffer.flags & V4L2_BUF_FLAG_ERROR) {
+            std::cerr << "WARNING: Dequeued v4l2 buffer with size " << buffer.bytesused << " (bytes) is corrupted\n";
+
+            buffer.bytesused = 0;
+
+            if (utils::V4L2Utils::xioctl(handle_, VIDIOC_QBUF, &buffer) == -1) {
+                std::cerr << "ERROR: VIDIOC_QBUF - " << strerror(errno) << '\n';
+            }
+
+            return std::nullopt;
+        }
+
+        // TODO (Ramil Safin): Convert frame timestamp into absolute time.
+
+        // copy buffer before querying
+        Frame frame{static_cast<uint8_t *>(internalBuffer_[buffer.index].data), buffer.bytesused};
 
         if (utils::V4L2Utils::xioctl(handle_, VIDIOC_QBUF, &buffer) == -1) {
             std::cerr << "ERROR: VIDIOC_QBUF - " << strerror(errno) << '\n';

@@ -1,0 +1,80 @@
+<launch>
+    <arg name="left_camera_name" default="left"/>
+    <arg name="right_camera_name" default="right"/>
+    <arg name="rear_camera_name" default="rear"/>
+    <arg name="center_camera_name" default="center"/>
+
+    <arg name="left_device_name"
+         default="/dev/v4l/by-id/usb-The_Imaging_Source_Europe_GmbH_DFM_22BUC03-ML_03610453-video-index0"/>
+
+    <arg name="right_device_name"
+         default="/dev/v4l/by-id/usb-The_Imaging_Source_Europe_GmbH_DFM_22BUC03-ML_03610446-video-index0"/>
+
+    <arg name="rear_device_name"
+         default="/dev/v4l/by-id/usb-The_Imaging_Source_Europe_GmbH_DFM_22BUC03-ML_03610450-video-index0"/>
+
+    <arg name="center_device_name" default="/dev/v4l/by-id/usb-Twiga_TWIGACam-video-index0"/>
+
+    <!-- camera info -->
+    <arg name="left_camera_info_url" default=""/>
+    <arg name="right_camera_info_url" default=""/>
+    <arg name="rear_camera_info_url" default=""/>
+    <arg name="center_camera_info_url" default=""/>
+
+    <!-- image view -->
+    <arg name="image_view_enabled" default="false"/>
+    <arg name="image_view_topic" default="image_raw"/>
+
+    <!-- left camera -->
+    <include file="$(find lirs_ros_video_streaming)/launch/camera.launch">
+        <arg name="camera_name" value="$(arg left_camera_name)"/>
+        <arg name="device_name" value="$(arg left_device_name)"/>
+        <arg name="fps" value="30"/>
+        <arg name="frame_id" value="$(arg left_camera_name)_frame_id"/>
+        <arg name="camera_info_url" value="$(arg left_camera_info_url)"/>
+        <arg name="width" value="744"/>
+        <arg name="height" value="480"/>
+        <arg name="image_format" value="bayer_grbg8"/>
+        <arg name="image_view_enabled" value="$(arg image_view_enabled)"/>
+    </include>
+
+    <!-- right camera -->
+    <include file="$(find lirs_ros_video_streaming)/launch/camera.launch">
+        <arg name="camera_name" value="$(arg right_camera_name)"/>
+        <arg name="device_name" value="$(arg right_device_name)"/>
+        <arg name="fps" value="30"/>
+        <arg name="frame_id" value="$(arg right_camera_name)_frame_id"/>
+        <arg name="camera_info_url" value="$(arg right_camera_info_url)"/>
+        <arg name="width" value="744"/>
+        <arg name="height" value="480"/>
+        <arg name="image_format" value="bayer_grbg8"/>
+        <arg name="image_view_enabled" value="$(arg image_view_enabled)"/>
+    </include>
+
+    <!-- rear camera -->
+    <include file="$(find lirs_ros_video_streaming)/launch/camera.launch">
+        <arg name="camera_name" value="$(arg rear_camera_name)"/>
+        <arg name="device_name" value="$(arg rear_device_name)"/>
+        <arg name="fps" value="30"/>
+        <arg name="frame_id" value="$(arg rear_camera_name)_frame_id"/>
+        <arg name="camera_info_url" value="$(arg rear_camera_info_url)"/>
+        <arg name="width" value="744"/>
+        <arg name="height" value="480"/>
+        <arg name="image_format" value="bayer_grbg8"/>
+        <arg name="image_view_enabled" value="$(arg image_view_enabled)"/>
+    </include>
+
+    <!-- center camera -->
+    <include file="$(find lirs_ros_video_streaming)/launch/camera.launch">
+        <arg name="camera_name" value="$(arg center_camera_name)"/>
+        <arg name="device_name" value="$(arg center_device_name)"/>
+        <arg name="fps" value="50"/>
+        <arg name="frame_id" value="$(arg center_camera_name)_frame_id"/>
+        <arg name="camera_info_url" value="$(arg center_camera_info_url)"/>
+        <arg name="width" value="1280"/>
+        <arg name="height" value="720"/>
+        <arg name="image_format" value="yuv422"/>
+        <arg name="image_view_enabled" value="$(arg image_view_enabled)"/>
+    </include>
+
+</launch>

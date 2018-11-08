@@ -43,6 +43,18 @@
 
 namespace lirs {
     namespace ros_utils {
+
+        /* defaults */
+        const std::string DEFAULT_DEVICE_NAME = "/dev/video0";
+        const std::string DEFAULT_CAMERA_NAME = "camera";
+        const std::string DEFAULT_CAMERA_INFO_URL = "";
+        const std::string DEFAULT_FRAME_ID = DEFAULT_CAMERA_NAME + "_frame_id";
+
+        static constexpr auto DEFAULT_FRAME_RATE = 30;
+        static constexpr auto DEFAULT_FRAME_WIDTH = 640;
+        static constexpr auto DEFAULT_FRAME_HEIGHT = 480;
+        const std::string DEFAULT_IMAGE_FORMAT = sensor_msgs::image_encodings::YUV422;
+
         static sensor_msgs::CameraInfo defaultCameraInfoFrom(sensor_msgs::ImagePtr const &img) {
             sensor_msgs::CameraInfo cam_info_msg;
             cam_info_msg.header.frame_id = img->header.frame_id;
@@ -117,8 +129,6 @@ namespace lirs {
 }  // namespace lirs
 
 int main(int argc, char **argv) {
-    using std::string_literals::operator ""s;
-
     ros::init(argc, argv, "lirs_ros_video_streaming");
 
     ros::NodeHandle nodeHandle;
@@ -139,14 +149,14 @@ int main(int argc, char **argv) {
     int frameRate;
     std::string imageFormat;
 
-    nodeHandle_.param("device_name", deviceName, "/dev/video0"s);
-    nodeHandle_.param("camera_name", cameraName, "camera"s);
-    nodeHandle_.param("frame_id", frameId, "frame_id"s);
-    nodeHandle_.param("camera_info_url", cameraInfoUrl, ""s);
-    nodeHandle_.param("width", width, 640);
-    nodeHandle_.param("height", height, 480);
-    nodeHandle_.param("fps", frameRate, 30);
-    nodeHandle_.param("image_format", imageFormat, sensor_msgs::image_encodings::YUV422);
+    nodeHandle_.param("device_name", deviceName, lirs::ros_utils::DEFAULT_DEVICE_NAME);
+    nodeHandle_.param("camera_name", cameraName, lirs::ros_utils::DEFAULT_CAMERA_NAME);
+    nodeHandle_.param("frame_id", frameId, lirs::ros_utils::DEFAULT_FRAME_ID);
+    nodeHandle_.param("camera_info_url", cameraInfoUrl, lirs::ros_utils::DEFAULT_CAMERA_INFO_URL);
+    nodeHandle_.param("width", width, lirs::ros_utils::DEFAULT_FRAME_WIDTH);
+    nodeHandle_.param("height", height, lirs::ros_utils::DEFAULT_FRAME_HEIGHT);
+    nodeHandle_.param("fps", frameRate, lirs::ros_utils::DEFAULT_FRAME_RATE);
+    nodeHandle_.param("image_format", imageFormat, lirs::ros_utils::DEFAULT_IMAGE_FORMAT);
 
     // checking image format
 

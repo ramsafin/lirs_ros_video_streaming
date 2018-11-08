@@ -35,23 +35,21 @@
 
 using std::string_literals::operator ""s;
 
+const auto TESTED_DEVICE = "/dev/video0"s;
+
 TEST(VideoCaptureUtilsTestCase, OpenCloseHandleShouldPass) {
-    auto device = "/dev/video0"s;
-    auto handle = lirs::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(TESTED_DEVICE);
 
     EXPECT_TRUE(handle > 0);
     EXPECT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
 
 TEST(VideoCaptureUtilsTestCase, CloseClosedHandleShouldPass) {
-    auto device = "/dev/video0"s;
     EXPECT_FALSE(lirs::V4L2Utils::close_handle(lirs::V4L2Constants::CLOSED_HANDLE));
 }
 
 TEST(VideoCaptureUtilsTestCase, GetFrameRateShouldPass) {
-    auto device = "/dev/video0"s;
-
-    auto handle = lirs::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(TESTED_DEVICE);
 
     ASSERT_TRUE(handle != lirs::V4L2Constants::CLOSED_HANDLE);
 
@@ -62,9 +60,7 @@ TEST(VideoCaptureUtilsTestCase, GetFrameRateShouldPass) {
 }
 
 TEST(VideoCaptureUtilsTestCase, SetFrameRateShouldPass) {
-    auto device = "/dev/video0"s;
-
-    auto handle = lirs::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(TESTED_DEVICE);
 
     ASSERT_TRUE(handle > 0);
 
@@ -81,9 +77,7 @@ TEST(VideoCaptureUtilsTestCase, SetFrameRateShouldPass) {
 }
 
 TEST(VideoCaptureUtilsTestCase, CaptureGetFormatShouldPass) {
-    auto device = "/dev/video0"s;
-
-    auto handle = lirs::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(TESTED_DEVICE);
 
     ASSERT_TRUE(handle > 0);
 
@@ -94,9 +88,7 @@ TEST(VideoCaptureUtilsTestCase, CaptureGetFormatShouldPass) {
 }
 
 TEST(VideoCaptureUtilsTestCase, SetAndTryFormatShouldPass) {
-    auto device = "/dev/video0"s;
-
-    auto handle = lirs::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(TESTED_DEVICE);
 
     ASSERT_TRUE(handle > 0);
 
@@ -119,8 +111,7 @@ TEST(VideoCaptureUtilsTestCase, SetAndTryFormatShouldPass) {
 }
 
 TEST(VideoCaptureTestCase, GetPixelFormatsShouldNotReturnEmptySet) {
-    auto device = "/dev/video0"s;
-    auto handle = lirs::V4L2Utils::open_handle(device);
+    auto handle = lirs::V4L2Utils::open_handle(TESTED_DEVICE);
 
     ASSERT_TRUE(handle != lirs::V4L2Constants::CLOSED_HANDLE);
 
@@ -131,19 +122,18 @@ TEST(VideoCaptureTestCase, GetPixelFormatsShouldNotReturnEmptySet) {
 }
 
 TEST(VideoCaptureTestCase, V4L2CaptureConstructionShouldPass) {
-    auto deviceName = "/dev/video0"s;
-    lirs::V4L2Capture capture(deviceName);
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     EXPECT_TRUE(capture.IsOpened());
     EXPECT_FALSE(capture.IsStreaming());
     EXPECT_FALSE(capture.ReadFrame().has_value());
     EXPECT_TRUE(capture.StopStreaming());
 
-    EXPECT_STREQ(deviceName.data(), capture.device().data());
+    EXPECT_STREQ(TESTED_DEVICE.data(), capture.device().data());
 }
 
 TEST(VideoCaptureTestCase, NonStreamingCaptureShouldPass) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     EXPECT_TRUE(capture.IsOpened());
     EXPECT_FALSE(capture.IsStreaming());
@@ -152,7 +142,7 @@ TEST(VideoCaptureTestCase, NonStreamingCaptureShouldPass) {
 }
 
 TEST(VideoCaptureTestCase, DefaultParamsShouldBeSetCorrectly) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     EXPECT_EQ(capture.Get(lirs::CaptureParam::BUFFER_SIZE), lirs::V4L2Defaults::DEFAULT_V4L2_BUFFER_SIZE);
     EXPECT_EQ(capture.Get(lirs::CaptureParam::PIX_FMT), lirs::V4L2Defaults::DEFAULT_V4L2_PIXEL_FORMAT);
@@ -168,7 +158,7 @@ TEST(VideoCaptureTestCase, CaptureConstructorParamsShouldBeSetCorrectly) {
     auto pixFmt = V4L2_PIX_FMT_YUYV;
     auto frameRate = 24u;
 
-    lirs::V4L2Capture capture("/dev/video0", pixFmt, width, height, frameRate, bufferSize);
+    lirs::V4L2Capture capture(TESTED_DEVICE, pixFmt, width, height, frameRate, bufferSize);
 
     EXPECT_EQ(capture.Get(lirs::CaptureParam::BUFFER_SIZE), bufferSize);
     EXPECT_EQ(capture.Get(lirs::CaptureParam::PIX_FMT), pixFmt);
@@ -178,7 +168,7 @@ TEST(VideoCaptureTestCase, CaptureConstructorParamsShouldBeSetCorrectly) {
 }
 
 TEST(VideoCaptureTestCase, SetParamsShouldChangeParameterValues) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     auto bufferSize = 16u;
     auto frameRate = 60u;
@@ -204,7 +194,7 @@ TEST(VideoCaptureTestCase, NonExistingDeviceCaptureShouldPass) {
 }
 
 TEST(VideoCaptureTestCase, StartStreamingOnOpenedCaptureShouldPass) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     ASSERT_TRUE(capture.IsOpened());
     EXPECT_FALSE(capture.IsStreaming());
@@ -219,7 +209,7 @@ TEST(VideoCaptureTestCase, StartStreamingOnOpenedCaptureShouldPass) {
 }
 
 TEST(VideoCaptureTestCase, StopStreamingOnOpenedCaptureShouldPass) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     ASSERT_TRUE(capture.IsOpened());
     ASSERT_TRUE(capture.StartStreaming());
@@ -236,11 +226,11 @@ TEST(VideoCaptureTestCase, StopStreamingOnOpenedCaptureShouldPass) {
 }
 
 TEST(VideoCaptureTestCase, AnotherCaptureOnOpenedDeviceShouldNotPass) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     ASSERT_TRUE(capture.IsOpened());
 
-    lirs::V4L2Capture otherCapture("/dev/video0");
+    lirs::V4L2Capture otherCapture(TESTED_DEVICE);
 
     EXPECT_TRUE(otherCapture.IsOpened());
     EXPECT_TRUE(capture.StartStreaming());
@@ -252,7 +242,7 @@ TEST(VideoCaptureTestCase, AnotherCaptureOnOpenedDeviceShouldNotPass) {
 TEST(VideoCaptureTestCase, ReadFrameOnOpenedCaptureShouldPass) {
     using std::chrono_literals::operator ""s;
 
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     ASSERT_TRUE(capture.IsOpened());
     ASSERT_TRUE(capture.StartStreaming());
@@ -261,7 +251,7 @@ TEST(VideoCaptureTestCase, ReadFrameOnOpenedCaptureShouldPass) {
     auto start_time = std::chrono::system_clock::now();
 
     // for 5 seconds
-    for (auto i = 0u; i < capture.Get(lirs::CaptureParam::FPS) * 2; i++) {
+    for (auto i = 0u; i < capture.Get(lirs::CaptureParam::FPS) * 5; i++) {
         auto frame = capture.ReadFrame();
 
         EXPECT_TRUE(frame.has_value());
@@ -271,27 +261,24 @@ TEST(VideoCaptureTestCase, ReadFrameOnOpenedCaptureShouldPass) {
     auto stop_time = std::chrono::system_clock::now();
     auto delta = stop_time - start_time;
 
-    EXPECT_TRUE(delta >= 2s && delta < 2.5s);
+    EXPECT_TRUE(delta >= 5s && delta < 5.5s);
 }
 
 TEST(VideoCaptureTestCase, DeviceDestrcutroShouldCleansUpResources) {
-    auto device = "/dev/video0"s;
-
     {
-        lirs::V4L2Capture capture(device);
+        lirs::V4L2Capture capture(TESTED_DEVICE);
         ASSERT_TRUE(capture.IsOpened());
         EXPECT_TRUE(capture.StartStreaming());
     }
     {
-        lirs::V4L2Capture capture(device);
+        lirs::V4L2Capture capture(TESTED_DEVICE);
         ASSERT_TRUE(capture.IsOpened());
         EXPECT_TRUE(capture.StartStreaming());
     }
 }
 
 TEST(VideoCaptureTestCase, ExceededCaptureBufferSizeShouldBeValidated) {
-    auto device = "/dev/video0"s;
-    lirs::V4L2Capture capture(device);
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     EXPECT_TRUE(capture.IsOpened());
     EXPECT_FALSE(capture.Set(lirs::CaptureParam::BUFFER_SIZE, 50));  // incorrect buffer size
@@ -299,8 +286,7 @@ TEST(VideoCaptureTestCase, ExceededCaptureBufferSizeShouldBeValidated) {
 }
 
 TEST(VideoCaptureTestCase, FrameRateShouldBeChanged) {
-    auto device = "/dev/video0"s;
-    lirs::V4L2Capture capture(device);
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     ASSERT_TRUE(capture.IsOpened());
 
@@ -311,7 +297,7 @@ TEST(VideoCaptureTestCase, FrameRateShouldBeChanged) {
 }
 
 TEST(VideoCaptureTestCase, CaptureFormatNegotiationShouldPass) {
-    lirs::V4L2Capture capture("/dev/video0", V4L2_PIX_FMT_H264, 777, 666);
+    lirs::V4L2Capture capture(TESTED_DEVICE, V4L2_PIX_FMT_H264, 777, 666);
 
     ASSERT_TRUE(capture.IsOpened());
     EXPECT_FALSE(capture.StartStreaming());
@@ -322,7 +308,7 @@ TEST(VideoCaptureTestCase, CaptureFormatNegotiationShouldPass) {
 }
 
 TEST(VideoCaptureTestCase, CaptureImageStepAndSizeAreSetCorrectly) {
-    lirs::V4L2Capture capture("/dev/video0");
+    lirs::V4L2Capture capture(TESTED_DEVICE);
 
     ASSERT_TRUE(capture.IsOpened());
     ASSERT_TRUE(capture.StartStreaming());
@@ -331,7 +317,7 @@ TEST(VideoCaptureTestCase, CaptureImageStepAndSizeAreSetCorrectly) {
     EXPECT_EQ(capture.imageSize(), capture.Get(lirs::CaptureParam::WIDTH) * capture.Get(lirs::CaptureParam::HEIGHT) * 2);
 }
 
-TEST(VideoCaptureTestCase, BuggyCameraShouldPass) {
+TEST(DISABLED_VideoCaptureTestCase, BuggyCameraShouldPass) {
     lirs::V4L2Capture capture("/dev/v4l/by-id/usb-Twiga_TWIGACam-video-index0");
 
     ASSERT_TRUE(capture.IsOpened());

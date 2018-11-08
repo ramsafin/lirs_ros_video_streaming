@@ -105,7 +105,7 @@ TEST(VideoCaptureUtilsTestCase, SetAndTryFormatShouldPass) {
     EXPECT_EQ(tryFormat->fmt.pix.height, height);
 
     EXPECT_TRUE(lirs::V4L2Utils::v4l2_set_format(handle, tryFormat->fmt.pix.pixelformat,
-                                             tryFormat->fmt.pix.width, tryFormat->fmt.pix.height));
+                                                 tryFormat->fmt.pix.width, tryFormat->fmt.pix.height));
 
     ASSERT_TRUE(lirs::V4L2Utils::close_handle(handle));
 }
@@ -314,7 +314,8 @@ TEST(VideoCaptureTestCase, CaptureImageStepAndSizeAreSetCorrectly) {
     ASSERT_TRUE(capture.StartStreaming());
 
     EXPECT_EQ(capture.imageStep(), capture.Get(lirs::CaptureParam::WIDTH) * 2);
-    EXPECT_EQ(capture.imageSize(), capture.Get(lirs::CaptureParam::WIDTH) * capture.Get(lirs::CaptureParam::HEIGHT) * 2);
+    EXPECT_EQ(capture.imageSize(),
+              capture.Get(lirs::CaptureParam::WIDTH) * capture.Get(lirs::CaptureParam::HEIGHT) * 2);
 }
 
 TEST(DISABLED_VideoCaptureTestCase, BuggyCameraShouldPass) {
@@ -338,6 +339,30 @@ TEST(DISABLED_VideoCaptureTestCase, BuggyCameraShouldPass) {
 
     auto buffer = capture.ReadFrame();
     ASSERT_TRUE(buffer);
+}
+
+TEST(FrameTestCase, EmptyFrameShouldPass) {
+    lirs::Frame frame{nullptr, 0};
+
+    EXPECT_TRUE(frame.buffer().empty());
+}
+
+TEST(FrameTestCase, FrameShouldBeCopied) {
+    size_t bufferSize = 32;
+    uint8_t buffer[bufferSize] = {0};
+
+    lirs::Frame frame{buffer, bufferSize};
+
+    EXPECT_EQ(frame.buffer().size(), bufferSize);
+
+    auto copyFrame = frame;  // copy constructor
+
+    EXPECT_EQ(copyFrame.buffer().size(), frame.buffer().size());
+
+    lirs::Frame otherFrame {std::move(copyFrame)};  // move constructor
+
+    EXPECT_EQ(otherFrame.buffer().size(), bufferSize);
+    EXPECT_TRUE(copyFrame.buffer().empty());
 }
 
 int main(int argc, char **argv) {

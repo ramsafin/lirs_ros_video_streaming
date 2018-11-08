@@ -65,17 +65,11 @@ namespace lirs {
                 : buffer_{std::vector<uint8_t>(data, data + size)},
                   timestamp_(std::chrono::system_clock::now().time_since_epoch()) {}
 
-        Frame(Frame &&other) noexcept
-                : buffer_(std::move(other.buffer_)),
-                  timestamp_(other.timestamp_) {
-            other.buffer_.clear();
-        }
+        ~Frame() = default;
 
-        Frame &operator=(Frame &&other) noexcept {
-            buffer_ = std::move(other.buffer_);
-            other.buffer_.clear();
-            return *this;
-        }
+        Frame(Frame &&other) noexcept = default;
+
+        Frame &operator=(Frame &&other) noexcept = default;
 
         Frame(Frame const &) = default;
 
@@ -92,8 +86,6 @@ namespace lirs {
         std::chrono::nanoseconds timestamp() const {
             return timestamp_;
         }
-
-        ~Frame() = default;
 
     private:
         /* frame pixels */

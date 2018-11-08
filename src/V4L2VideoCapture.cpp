@@ -297,8 +297,9 @@ namespace lirs {
 
         // skip corrupted v4l2 buffers
 
-        if (buffer.flags & V4L2_BUF_FLAG_ERROR) {
-            std::cerr << "WARNING: Dequeued v4l2 buffer with size " << buffer.bytesused << " (bytes) is corrupted\n";
+        if (buffer.flags & V4L2_BUF_FLAG_ERROR || buffer.bytesused != imageSize_) {
+            std::cerr << "WARNING: Dequeued v4l2 buffer with size " << buffer.bytesused
+                      << '/' <<  imageSize_ << " (bytes) is corrupted\n";
 
             buffer.bytesused = 0;
 

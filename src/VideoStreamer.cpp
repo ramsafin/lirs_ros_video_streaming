@@ -41,19 +41,21 @@
 
 #include "lirs_ros_video_streaming/V4L2VideoCapture.hpp"
 
+using std::string_literals::operator""s;
+
 namespace lirs {
     namespace ros_utils {
 
         /* defaults */
-        const std::string DEFAULT_DEVICE_NAME = "/dev/video0";
-        const std::string DEFAULT_CAMERA_NAME = "camera";
-        const std::string DEFAULT_CAMERA_INFO_URL = "";
-        const std::string DEFAULT_FRAME_ID = DEFAULT_CAMERA_NAME + "_frame_id";
+        const auto DEFAULT_DEVICE_NAME = "/dev/video0"s;
+        const auto DEFAULT_CAMERA_NAME = "camera"s;
+        const auto DEFAULT_CAMERA_INFO_URL = ""s;
+        const auto DEFAULT_FRAME_ID = DEFAULT_CAMERA_NAME + "_frame_id"s;
 
         static constexpr auto DEFAULT_FRAME_RATE = 30;
         static constexpr auto DEFAULT_FRAME_WIDTH = 640;
         static constexpr auto DEFAULT_FRAME_HEIGHT = 480;
-        const std::string DEFAULT_IMAGE_FORMAT = sensor_msgs::image_encodings::YUV422;
+        const auto DEFAULT_IMAGE_FORMAT = sensor_msgs::image_encodings::YUV422;
 
         static sensor_msgs::CameraInfo defaultCameraInfoFrom(sensor_msgs::ImagePtr const &img) {
             sensor_msgs::CameraInfo cam_info_msg;

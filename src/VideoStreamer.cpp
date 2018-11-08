@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
                     cv::Mat rawImage(capture.Get(lirs::CaptureParam::HEIGHT),
                                      capture.Get(lirs::CaptureParam::WIDTH), CV_8UC2);
 
-                    rawImage.data = frame->data().data();  // no copy
+                    rawImage.data = frame->buffer().data();  // no copy
 
                     cv::Mat greyscale;
 
@@ -205,10 +205,10 @@ int main(int argc, char **argv) {
                     imageMsg->data.assign(greyscale.data, greyscale.data + greyscale.rows * greyscale.cols);  // copy
 
                 } else {
-                    imageMsg->data = std::move(frame->data());
+                    imageMsg->data = std::move(frame->buffer());
                 }
 
-                // TODO (Ramil Safin): Use frame's timestamp.
+                // TODO (Ramil Safin): Use frame's native timestamp, i.e. v4l2 buffer's timestamp.
                 publisher.publish(*imageMsg, cameraInfoMsg, ros::Time::now());
             }
 

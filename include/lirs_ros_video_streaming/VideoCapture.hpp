@@ -62,18 +62,18 @@ namespace lirs {
          * @param size image data size in bytes.
          */
         Frame(uint8_t *data, size_t size)
-                : data_{std::vector<uint8_t>(data, data + size)},
+                : buffer_{std::vector<uint8_t>(data, data + size)},
                   timestamp_(std::chrono::system_clock::now().time_since_epoch()) {}
 
         Frame(Frame &&other) noexcept
-                : data_(std::move(other.data_)),
+                : buffer_(std::move(other.buffer_)),
                   timestamp_(other.timestamp_) {
-            other.data_.clear();
+            other.buffer_.clear();
         }
 
         Frame &operator=(Frame &&other) noexcept {
-            data_ = std::move(other.data_);
-            other.data_.clear();
+            buffer_ = std::move(other.buffer_);
+            other.buffer_.clear();
             return *this;
         }
 
@@ -81,12 +81,12 @@ namespace lirs {
 
         Frame &operator=(Frame const &) = default;
 
-        std::vector<uint8_t> &data() {
-            return data_;
+        std::vector<uint8_t> &buffer() {
+            return buffer_;
         }
 
-        std::vector<uint8_t> const &data() const {
-            return data_;
+        std::vector<uint8_t> const &buffer() const {
+            return buffer_;
         }
 
         std::chrono::nanoseconds timestamp() const {
@@ -97,7 +97,7 @@ namespace lirs {
 
     private:
         /* frame pixels */
-        std::vector<uint8_t> data_;
+        std::vector<uint8_t> buffer_;
 
         /* captured timestamp */
         std::chrono::nanoseconds timestamp_;

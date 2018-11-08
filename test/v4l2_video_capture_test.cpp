@@ -265,7 +265,7 @@ TEST(VideoCaptureTestCase, ReadFrameOnOpenedCaptureShouldPass) {
         auto frame = capture.ReadFrame();
 
         EXPECT_TRUE(frame.has_value());
-        EXPECT_FALSE(frame->data().empty());
+        EXPECT_FALSE(frame->buffer().empty());
     }
 
     auto stop_time = std::chrono::system_clock::now();

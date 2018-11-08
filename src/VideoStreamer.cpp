@@ -90,7 +90,7 @@ namespace lirs {
 
         static sensor_msgs::ImagePtr imageMessageFrom(std::string const &frameId, std::string const &imageFormat,
                                                       lirs::VideoCapture const &capture) {
-            
+
             auto imageMsg = boost::make_shared<sensor_msgs::Image>();
             imageMsg->header.frame_id = frameId;
             imageMsg->width = capture.Get(lirs::CaptureParam::WIDTH);

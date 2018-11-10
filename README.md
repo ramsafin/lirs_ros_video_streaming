@@ -86,7 +86,7 @@ The following ROS launch file will start ROS _master node_ along with _video_str
 
 ## Limitations and Issues
 - **YUV422** image format in ROS Kinetic represents **UYVY** (other formats does not supported, e.g. **YUYV**).
-In this case frames are converted into **greyscale** format, as it is computationally less demanded compared to the conversion into an **RGB**.
+In this case frames are converted into **grayscale** format, as it is computationally less demanded compared to the conversion into an **RGB**.
 
 - No synchronization between multiple cameras (e.g. in case of stereo systems).
 

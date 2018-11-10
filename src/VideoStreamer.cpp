@@ -111,8 +111,8 @@ namespace lirs {
             imageMsg->height = capture.Get(lirs::CaptureParam::HEIGHT);
             imageMsg->is_bigendian = 0;
 
-            // YUV422 supports only for UYVY format,
-            // thus images will be converted into greyscale (conversion into RGB/BGR is computation demanded)
+            // YUV422 represents UYVY (not YUYV),
+            // thus images will be converted into grayscale
             if (imageFormat == sensor_msgs::image_encodings::YUV422
                 && capture.Get(lirs::CaptureParam::PIX_FMT) != V4L2_PIX_FMT_UYVY) {
                 imageMsg->step = imageMsg->width;  // 1 byte pixel (depth)
@@ -204,17 +204,17 @@ int main(int argc, char **argv) {
 
             if (auto frame = capture.ReadFrame(); frame.has_value()) {
                 if (imageFormat == sensor_msgs::image_encodings::YUV422) {
-                    // convert into greyscale
+                    // convert into grayscale
                     cv::Mat rawImage(capture.Get(lirs::CaptureParam::HEIGHT),
                                      capture.Get(lirs::CaptureParam::WIDTH), CV_8UC2);
 
                     rawImage.data = frame->buffer().data();  // no copy
 
-                    cv::Mat greyscale;
+                    cv::Mat grayscale;
 
-                    cv::cvtColor(rawImage, greyscale, cv::COLOR_YUV2GRAY_YUYV, 1);  // copy
+                    cv::cvtColor(rawImage, grayscale, cv::COLOR_YUV2GRAY_YUYV, 1);  // copy
 
-                    imageMsg->data.assign(greyscale.data, greyscale.data + greyscale.rows * greyscale.cols);  // copy
+                    imageMsg->data.assign(grayscale.data, grayscale.data + grayscale.rows * grayscale.cols);  // copy
 
                 } else {
                     imageMsg->data = std::move(frame->buffer());

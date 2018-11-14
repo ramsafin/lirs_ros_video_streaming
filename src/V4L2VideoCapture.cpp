@@ -42,19 +42,19 @@
 namespace lirs {
     V4L2Capture::V4L2Capture(std::string device, uint32_t v4l2PixFmt, uint32_t width, uint32_t height,
                              uint32_t frameRate, uint32_t bufferSize)
-            : handle_(V4L2Constants::CLOSED_HANDLE),
-              imageStep_(0), imageSize_(0),
-              device_(std::move(device)),
-              isStreaming_(false) {
+            : handle_{V4L2Constants::CLOSED_HANDLE},
+              imageStep_{0}, imageSize_{0},
+              device_{std::move(device)},
+              isStreaming_{false} {
         params_ = {
-                {CaptureParam::WIDTH,       width},
-                {CaptureParam::HEIGHT,      height},
-                {CaptureParam::FPS,         frameRate},
-                {CaptureParam::PIX_FMT,     v4l2PixFmt},
-                {CaptureParam::BUFFER_SIZE, bufferSize}
+                {CaptureParam::FRAME_WIDTH,      width},
+                {CaptureParam::FRAME_HEIGHT,     height},
+                {CaptureParam::FRAME_RATE,       frameRate},
+                {CaptureParam::V4L2_PIX_FMT,     v4l2PixFmt},
+                {CaptureParam::V4L2_BUFFERS_NUM, bufferSize}
         };
 
-        handle_ = V4L2Utils::open_handle(device_);  // acquire resource
+        handle_ = V4L2Utils::open_device(device_);  // acquire resource
     }
 
     bool V4L2Capture::IsOpened() const {
@@ -70,14 +70,14 @@ namespace lirs {
 
         if (IsStreaming()) return true; // ALREADY STREAMING
 
-        if (!checkCapabilities()) return false; // UNSUPPORTED CAPABILITIES ERROR
+        if (!checkSupportedCapabilities()) return false; // UNSUPPORTED CAPABILITIES ERROR
 
         if (!negotiateFormat()) return false;  // FORMAT NEGOTIATION ERROR
 
         if (!negotiateFrameRate()) return false; // UNSUPPORTED FORMAT ERROR
 
-        if (!allocateBuffers()) {
-            cleanupBuffers();
+        if (!allocateInternalBuffers()) {
+            cleanupInternalBuffers();
             return false; // BUFFERS ALLOCATION ERROR
         }
 
@@ -97,7 +97,7 @@ namespace lirs {
             return false;  // CANNOT STOP STREAMING
         };
 
-        cleanupBuffers();
+        cleanupInternalBuffers();
 
         return true;
     }
@@ -107,7 +107,7 @@ namespace lirs {
 
         // TODO (Ramil Safin): Add parameters validation.
         switch (param) {
-            case CaptureParam::BUFFER_SIZE:
+            case CaptureParam::V4L2_BUFFERS_NUM:
                 if (!V4L2Utils::is_in_range_inclusive(1u, V4L2Constants::V4L2_MAX_BUFFER_SIZE, value)) {
                     return false;
                 }
@@ -125,18 +125,23 @@ namespace lirs {
     }
 
     std::optional<Frame> V4L2Capture::ReadFrame() {
-        return IsStreaming() && V4L2Utils::v4l2_is_readable(handle_) ? internalReadFrame() : std::nullopt;
+        if (IsStreaming()) {
+            if (V4L2Utils::v4l2_is_readable(handle_)) {
+                return internalReadFrame();
+            }
+        }
+        return std::nullopt;
     }
 
-    bool V4L2Capture::allocateBuffers() {
+    bool V4L2Capture::allocateInternalBuffers() {
         v4l2_requestbuffers requestBuffers{};
-        requestBuffers.count = Get(CaptureParam::BUFFER_SIZE);
+        requestBuffers.count = Get(CaptureParam::V4L2_BUFFERS_NUM);
         requestBuffers.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         requestBuffers.memory = V4L2_MEMORY_MMAP;
 
         // enqueue requested buffers to the driver's queue
 
-        if (V4L2Utils::xioctl(handle_, VIDIOC_REQBUFS, &requestBuffers) == -1) {
+        if (V4L2Utils::xioctl(handle_, VIDIOC_REQBUFS, &requestBuffers) == V4L2Utils::ERROR_CODE) {
             if (errno == EINVAL) {
                 std::cerr << "ERROR: Device does not support memory mapping - " << strerror(errno) << '\n';
             } else {
@@ -145,21 +150,21 @@ namespace lirs {
             return false;
         }
 
-        if (requestBuffers.count != Get(CaptureParam::BUFFER_SIZE)) {
-            params_[CaptureParam::BUFFER_SIZE] = requestBuffers.count;
+        if (requestBuffers.count != Get(CaptureParam::V4L2_BUFFERS_NUM)) {
+            params_[CaptureParam::V4L2_BUFFERS_NUM] = requestBuffers.count;
 
-            std::cerr << "WARNING: Buffer size on " << device_
+            std::cerr << "WARNING: MappedBuffer size on " << device_
                       << " has changed to " << requestBuffers.count << '\n';
         }
 
-        internalBuffer_.reserve(requestBuffers.count);
+        internalBuffers_.reserve(requestBuffers.count);
 
         v4l2_buffer buffer{};
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
 
-        for (buffer.index = 0; buffer.index < requestBuffers.count; ++buffer.index) {
-            if (V4L2Utils::xioctl(handle_, VIDIOC_QUERYBUF, &buffer) == -1) {
+        for (buffer.index = 0u; buffer.index < requestBuffers.count; ++buffer.index) {
+            if (V4L2Utils::xioctl(handle_, VIDIOC_QUERYBUF, &buffer) == V4L2Utils::ERROR_CODE) {
                 std::cerr << "ERROR: VIDIOC_QUERYBUF - " << strerror(errno) << '\n';
                 return false;
             }
@@ -174,23 +179,23 @@ namespace lirs {
                 return false;
             }
 
-            internalBuffer_.emplace_back(bufferData, bufferLength);
+            internalBuffers_.emplace_back(bufferData, bufferLength);
         }
 
         return true;
     }
 
-    void V4L2Capture::cleanupBuffers() {
-        if (!internalBuffer_.empty()) {
-            internalBuffer_.clear();
-            internalBuffer_.shrink_to_fit();
+    void V4L2Capture::cleanupInternalBuffers() {
+        if (!internalBuffers_.empty()) {
+            internalBuffers_.clear();
+            internalBuffers_.shrink_to_fit();
 
             v4l2_requestbuffers requestBuffers{};
-            requestBuffers.count = 0;
+            requestBuffers.count = 0u;
             requestBuffers.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             requestBuffers.memory = V4L2_MEMORY_MMAP;
 
-            if (V4L2Utils::xioctl(handle_, VIDIOC_REQBUFS, &requestBuffers) == -1) {
+            if (V4L2Utils::xioctl(handle_, VIDIOC_REQBUFS, &requestBuffers) == V4L2Utils::ERROR_CODE) {
                 std::cerr << "ERROR: Cannot cleanup allocated buffers - " << strerror(errno) << '\n';
                 return;
             }
@@ -202,14 +207,14 @@ namespace lirs {
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
 
-        for (buffer.index = 0; buffer.index < Get(CaptureParam::BUFFER_SIZE); ++buffer.index) {
-            if (V4L2Utils::xioctl(handle_, VIDIOC_QBUF, &buffer) == -1) {
+        for (buffer.index = 0u; buffer.index < Get(CaptureParam::V4L2_BUFFERS_NUM); ++buffer.index) {
+            if (V4L2Utils::xioctl(handle_, VIDIOC_QBUF, &buffer) == V4L2Utils::ERROR_CODE) {
                 std::cerr << "ERROR: VIDIOC_QBUF  - " << strerror(errno) << '\n';
                 return false;
             }
         }
 
-        if (V4L2Utils::xioctl(handle_, VIDIOC_STREAMON, &buffer.type) == -1) {
+        if (V4L2Utils::xioctl(handle_, VIDIOC_STREAMON, &buffer.type) == V4L2Utils::ERROR_CODE) {
             std::cerr << "ERROR: Cannot enable streaming mode - " << strerror(errno) << '\n';
             return false;
         }
@@ -221,7 +226,7 @@ namespace lirs {
 
     bool V4L2Capture::disableSteaming() {
         if (auto bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                V4L2Utils::xioctl(handle_, VIDIOC_STREAMOFF, &bufType) == -1) {
+                V4L2Utils::xioctl(handle_, VIDIOC_STREAMOFF, &bufType) == V4L2Utils::ERROR_CODE) {
             std::cerr << "ERROR: Unable to stop streaming - " << strerror(errno) << '\n';
             return false;
         }
@@ -232,13 +237,13 @@ namespace lirs {
     }
 
     bool V4L2Capture::negotiateFormat() {
-        if (V4L2Utils::v4l2_try_format(handle_, Get(CaptureParam::PIX_FMT), Get(CaptureParam::WIDTH),
-                                       Get(CaptureParam::HEIGHT))) {
+        if (V4L2Utils::v4l2_try_format(handle_, Get(CaptureParam::V4L2_PIX_FMT), Get(CaptureParam::FRAME_WIDTH),
+                                       Get(CaptureParam::FRAME_HEIGHT))) {
 
             if (auto format = V4L2Utils::v4l2_set_format(handle_,
-                                                         Get(CaptureParam::PIX_FMT),
-                                                         Get(CaptureParam::WIDTH),
-                                                         Get(CaptureParam::HEIGHT)); format.has_value()) {
+                                                         Get(CaptureParam::V4L2_PIX_FMT),
+                                                         Get(CaptureParam::FRAME_WIDTH),
+                                                         Get(CaptureParam::FRAME_HEIGHT)); format.has_value()) {
                 imageStep_ = format->fmt.pix.bytesperline;
                 imageSize_ = format->fmt.pix.sizeimage;
                 return true;
@@ -250,15 +255,16 @@ namespace lirs {
     }
 
     bool V4L2Capture::negotiateFrameRate() {
-        if (auto frameRate = V4L2Utils::v4l2_set_frame_rate(handle_, 1, Get(CaptureParam::FPS)); frameRate) {
-            params_[CaptureParam::FPS] = frameRate->parm.capture.timeperframe.denominator;
+        auto num = 1u;
+        if (auto frameRate = V4L2Utils::v4l2_set_frame_rate(handle_, num, Get(CaptureParam::FRAME_RATE)); frameRate) {
+            params_[CaptureParam::FRAME_RATE] = frameRate->parm.capture.timeperframe.denominator;
             return true;
         }
 
         return false;
     }
 
-    bool V4L2Capture::checkCapabilities() {
+    bool V4L2Capture::checkSupportedCapabilities() {
         // TODO (Ramil Safin): Cache queried capabilities.
         auto requiredCapabilities = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
 
@@ -275,13 +281,13 @@ namespace lirs {
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
 
-        int res = 0;  // dequerying status
+        int dequeryStatus{0};
 
         // dequery v4l2 buffers from the driver's outgoing queue
 
-        while ((res = V4L2Utils::xioctl(handle_, VIDIOC_DQBUF, &buffer)) < 0 && (errno == EINTR));
+        while ((dequeryStatus = V4L2Utils::xioctl(handle_, VIDIOC_DQBUF, &buffer)) < 0 && (errno == EINTR));
 
-        if (res < 0) {
+        if (dequeryStatus < 0) {
             switch (errno) {
                 case EAGAIN:
                     std::cerr << "WARNING: Device is not ready for reading" << strerror(errno) << '\n';
@@ -299,7 +305,7 @@ namespace lirs {
 
         if (buffer.flags & V4L2_BUF_FLAG_ERROR || buffer.bytesused != imageSize_) {
             std::cerr << "WARNING: Dequeued v4l2 buffer with size " << buffer.bytesused
-                      << '/' <<  imageSize_ << " (bytes) is corrupted\n";
+                      << '/' << imageSize_ << " (bytes) is corrupted\n";
 
             buffer.bytesused = 0;
 
@@ -312,8 +318,8 @@ namespace lirs {
 
         // TODO (Ramil Safin): Convert frame timestamp into absolute time.
 
-        // copy buffer before querying
-        Frame frame{static_cast<uint8_t *>(internalBuffer_[buffer.index].data), buffer.bytesused};
+        // copy buffer before querying it back
+        Frame frame{static_cast<uint8_t *>(internalBuffers_[buffer.index].rawDataPtr), buffer.bytesused};
 
         if (V4L2Utils::xioctl(handle_, VIDIOC_QBUF, &buffer) == -1) {
             std::cerr << "ERROR: VIDIOC_QBUF - " << strerror(errno) << '\n';

@@ -35,45 +35,24 @@
 #include "linux/videodev2.h"
 
 namespace lirs {
-    /**
-     * Default capturing parameters.
-     */
     struct V4L2Defaults {
-        static constexpr auto DEFAULT_WIDTH = 640u;
-        static constexpr auto DEFAULT_HEIGHT = 480u;
         static constexpr auto DEFAULT_FRAME_RATE = 30u;
-        static constexpr auto DEFAULT_V4L2_PIXEL_FORMAT = V4L2_PIX_FMT_YUYV;  /* v4l2 pixel format */
-        static constexpr auto DEFAULT_V4L2_BUFFER_SIZE = 4u;  /* v4l2 buffer size (number of buffer elements) */
+        static constexpr auto DEFAULT_FRAME_WIDTH = 640u;
+        static constexpr auto DEFAULT_FRAME_HEIGHT = 480u;
+        static constexpr auto DEFAULT_V4L2_BUFFERS_NUM = 4u;
+        static constexpr auto DEFAULT_V4L2_PIXEL_FORMAT = V4L2_PIX_FMT_YUYV;
     };
 
     /**
      * @brief Captured video data, i.e. images.
      *
-     * Holds information about captured video images.
-     *
      * @todo add frame's captured timestamp and sequence number.
      */
     class Frame final {
     public:
-        /**
-         * @brief Constructs frame using given image data.
-         *
-         * @param data image pixels.
-         * @param size image data size in bytes.
-         */
         Frame(uint8_t *data, size_t size)
                 : buffer_{std::vector<uint8_t>(data, data + size)},
-                  timestamp_(std::chrono::system_clock::now().time_since_epoch()) {}
-
-        ~Frame() = default;
-
-        Frame(Frame &&other) noexcept = default;
-
-        Frame &operator=(Frame &&other) noexcept = default;
-
-        Frame(Frame const &) = default;
-
-        Frame &operator=(Frame const &) = default;
+                  captured_(std::chrono::system_clock::now().time_since_epoch()) {}
 
         std::vector<uint8_t> &buffer() {
             return buffer_;
@@ -84,28 +63,26 @@ namespace lirs {
         }
 
         std::chrono::nanoseconds timestamp() const {
-            return timestamp_;
+            return captured_;
         }
 
     private:
-        /* frame pixels */
         std::vector<uint8_t> buffer_;
 
-        /* captured timestamp */
-        std::chrono::nanoseconds timestamp_;
+        std::chrono::nanoseconds captured_;
     };
 
     /**
      * @brief Capture parameters enum.
      *
-     * Capture parameters used in order to get / modify parameters in VideoCapture.
+     * Capture parameters used in order to get and/or modify parameters in VideoCapture.
      */
     enum class CaptureParam {
-        FPS,  /* Frame rate, frames per second */
-        WIDTH,  /* Frame width in pixels */
-        HEIGHT,  /* Frame height in pixels */
-        PIX_FMT,  /* v4l2 pixel format */
-        BUFFER_SIZE  /* v4l2 buffer size (number of allocated buffers) */
+        FRAME_RATE,
+        FRAME_WIDTH,
+        FRAME_HEIGHT,
+        V4L2_PIX_FMT,
+        V4L2_BUFFERS_NUM
     };
 
     /**

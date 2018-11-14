@@ -41,7 +41,7 @@
 
 #include "lirs_ros_video_streaming/V4L2VideoCapture.hpp"
 
-using std::string_literals::operator""s;
+using std::string_literals::operator ""s;
 
 namespace lirs {
     namespace ros_utils {
@@ -107,14 +107,14 @@ namespace lirs {
 
             auto imageMsg = boost::make_shared<sensor_msgs::Image>();
             imageMsg->header.frame_id = frameId;
-            imageMsg->width = capture.Get(lirs::CaptureParam::WIDTH);
-            imageMsg->height = capture.Get(lirs::CaptureParam::HEIGHT);
+            imageMsg->width = capture.Get(lirs::CaptureParam::FRAME_WIDTH);
+            imageMsg->height = capture.Get(lirs::CaptureParam::FRAME_HEIGHT);
             imageMsg->is_bigendian = 0;
 
             // YUV422 represents UYVY (not YUYV),
             // thus images will be converted into grayscale
             if (imageFormat == sensor_msgs::image_encodings::YUV422
-                && capture.Get(lirs::CaptureParam::PIX_FMT) != V4L2_PIX_FMT_UYVY) {
+                && capture.Get(lirs::CaptureParam::V4L2_PIX_FMT) != V4L2_PIX_FMT_UYVY) {
                 imageMsg->step = imageMsg->width;  // 1 byte pixel (depth)
                 imageMsg->encoding = sensor_msgs::image_encodings::MONO8;
                 imageMsg->data.reserve(imageMsg->step * imageMsg->height);
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     auto cameraInfoManager = camera_info_manager::CameraInfoManager(nodeHandle, cameraName, cameraInfoUrl);
     auto cameraInfoMsg = cameraInfoManager.getCameraInfo();
 
-    ros::Rate rate(capture.Get(lirs::CaptureParam::FPS));
+    ros::Rate rate(capture.Get(lirs::CaptureParam::FRAME_RATE));
 
     // NOTE: Image message format may differ from the image format (see imageMessageFrom() method).
     auto imageMsg = lirs::ros_utils::imageMessageFrom(frameId, imageFormat, capture);
@@ -204,9 +204,9 @@ int main(int argc, char **argv) {
 
             if (auto frame = capture.ReadFrame(); frame.has_value()) {
                 if (imageFormat == sensor_msgs::image_encodings::YUV422) {
-                    // convert into grayscale
-                    cv::Mat rawImage(capture.Get(lirs::CaptureParam::HEIGHT),
-                                     capture.Get(lirs::CaptureParam::WIDTH), CV_8UC2);
+
+                    cv::Mat rawImage(capture.Get(lirs::CaptureParam::FRAME_HEIGHT),
+                                     capture.Get(lirs::CaptureParam::FRAME_WIDTH), CV_8UC2);
 
                     rawImage.data = frame->buffer().data();  // no copy
 

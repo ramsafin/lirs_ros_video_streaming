@@ -2,7 +2,7 @@
 <package>
     <name>lirs_ros_video_streaming</name>
     <description>Video Streaming ROS Package based on Video4Linux2 API</description>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 
     <license>MIT</license>
 

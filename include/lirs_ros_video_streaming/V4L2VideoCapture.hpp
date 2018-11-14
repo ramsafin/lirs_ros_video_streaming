@@ -40,8 +40,6 @@
 #include "V4L2Utils.hpp"
 
 namespace lirs {
-
-
     class V4L2Capture final : public VideoCapture {
     public:
         /**
@@ -49,30 +47,20 @@ namespace lirs {
          *
          * If parameters are not specified the default ones will be used.
          * After successful video resource acquisition it will be opened, i.e. IsOpen() = true.
-         *
-         * @param device video resource.
-         * @param v4l2PixFmt image format.
-         * @param width captured frames width.
-         * @param height captured frames height.
-         * @param frameRate frames per second.
-         * @param bufferSize preferred number of v4l2 buffers.
          */
         explicit V4L2Capture(std::string device,
                              uint32_t v4l2PixFmt = V4L2Defaults::DEFAULT_V4L2_PIXEL_FORMAT,
-                             uint32_t width = V4L2Defaults::DEFAULT_WIDTH,
-                             uint32_t height = V4L2Defaults::DEFAULT_HEIGHT,
+                             uint32_t width = V4L2Defaults::DEFAULT_FRAME_WIDTH,
+                             uint32_t height = V4L2Defaults::DEFAULT_FRAME_HEIGHT,
                              uint32_t frameRate = V4L2Defaults::DEFAULT_FRAME_RATE,
-                             uint32_t bufferSize = V4L2Defaults::DEFAULT_V4L2_BUFFER_SIZE);
+                             uint32_t bufferSize = V4L2Defaults::DEFAULT_V4L2_BUFFERS_NUM);
 
-        /**
-         * @brief Cleans up allocated resources and frees video resource acquisition.
-         */
         ~V4L2Capture() override {
             if (IsOpened() && IsStreaming()) {
                 disableSteaming();
-                cleanupBuffers();
-                if (V4L2Utils::close_handle(handle_)) {
-                    handle_ = V4L2Constants::CLOSED_HANDLE;  // IsOpened() = false
+                cleanupInternalBuffers();
+                if (V4L2Utils::close_device(handle_)) {
+                    handle_ = V4L2Constants::CLOSED_HANDLE;
                 }
             }
         }
@@ -87,20 +75,13 @@ namespace lirs {
 
         /**
          * @brief Sets capture parameters if streaming mode is not enabled.
-         *
-         * @param param capture parameter name.
-         * @param value capture parameter value.
-         * @return true - if parameter is changed, false - otherwise.
+
+         * @return true - if parameter's changed, false - otherwise.
          */
         bool Set(CaptureParam param, uint32_t value) override;
 
         uint32_t Get(CaptureParam param) const override;
 
-        /**
-         * @brief Captures a frame from the device.
-         *
-         * @return empty - no frames are captured, captured frame - otherwise.
-         */
         std::optional<Frame> ReadFrame() override;
 
         std::string const &device() const override {
@@ -126,101 +107,49 @@ namespace lirs {
         V4L2Capture &operator=(V4L2Capture &&) = delete;
 
     private:
-        /* v4l2 buffer */
-        struct Buffer final {
-            void *data;
-            size_t length;  // size in bytes
+        struct MappedBuffer final {
+            void *rawDataPtr;
+            size_t lengthBytes;
 
-            /**
-             * Cleans up mapped buffer.
-             */
-            ~Buffer() {
-                if (munmap(data, length) == -1) std::cerr << "WARNING: Unable to unmap buffers\n";
+            ~MappedBuffer() {
+                if (munmap(rawDataPtr, lengthBytes) == V4L2Utils::ERROR_CODE) {
+                    std::cerr << "WARNING: Unable to unmap buffers\n";
+                }
             }
 
-            Buffer(void *bufData, size_t bufLen) : data(bufData), length(bufLen) {}
+            MappedBuffer(void *bufData, size_t bufLen) : rawDataPtr(bufData), lengthBytes(bufLen) {}
         };
 
-        /**
-         * @brief Allocates v4l2 buffers by mapping them into application's memory.
-         *
-         * @return true - success, false - otherwise.
-         */
-        bool allocateBuffers();
+        bool allocateInternalBuffers();
 
-        /**
-         * @brief Cleans up allocated buffers by deleting Buffers (unmap) and requesting zero v4l2 buffers.
-         */
-        void cleanupBuffers();
+        void cleanupInternalBuffers();
 
-        /**
-         * @brief Getting into streaming mode (@see IsStreaming()).
-         *
-         * @return true - success, false - otherwise.
-         */
         bool enableStreaming();
 
-        /**
-         * @brief Stops streaming mode (@see IsStreaming()).
-         *
-         * @return true - success, false - otherwise.
-         */
         bool disableSteaming();
 
-        /**
-         * @brief Tries to set the specified by the capture parameters format.
-         *
-         * If given format does not supported by the device format negotiation stops.
-         *
-         * @return true - format is set, false - otherwise.
-         */
         bool negotiateFormat();
 
-        /**
-         * @brief Tries to set the frame rate to the specified by capture parameters value.
-         *
-         * If given frame rate does not supported v4l2 driver handles it automatically and sets it to the supported one.
-         *
-         * @return true - frame rate is set, false - otherwise.
-         */
         bool negotiateFrameRate();
 
-        /**
-         * @brief Checks v4l2 device capabilities.
-         *
-         * Capabilities include support for video streaming (memory mapping I/O) and capturing abilities.
-         *
-         * @return true - v4l2 device supports for required capabilities, false - otherwise.
-         */
-        bool checkCapabilities();
+        bool checkSupportedCapabilities();
 
-        /**
-         * @brief Retrieves frame from the v4l2 driver's outgoing queue.
-         *
-         * @return captured frame - in case of success, empty - error occurred .
-         */
         std::optional<Frame> internalReadFrame();
 
     private:
-        /* Video device file descriptor */
         int handle_;
 
-        /* Image step (bytes in one image line) */
         uint32_t imageStep_;
 
-        /* Size of the images in bytes */
         uint32_t imageSize_;
 
-        /* Video device url, e.g. '/dev/video0' */
         std::string const device_;
 
         /* Flag indicating if streaming process in on */
         std::atomic_bool isStreaming_;
 
-        /* Frames buffer mapped to the video driver's internal buffer (Memory Mapping) */
-        std::vector<Buffer> internalBuffer_;
+        std::vector<MappedBuffer> internalBuffers_;
 
-        /* Video capturing parameters */
         std::map<CaptureParam, uint32_t> params_;
     };
 

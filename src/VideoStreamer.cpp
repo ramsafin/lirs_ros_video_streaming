@@ -96,7 +96,7 @@ namespace lirs {
                   || sensor_msgs::image_encodings::isBayer(imageFormat)
                   || sensor_msgs::image_encodings::isColor(imageFormat)
                   || imageFormat == sensor_msgs::image_encodings::YUV422)) {
-                ROS_ERROR_STREAM("Given ROS image format: " << imageFormat << " does not supported!");
+                ROS_ERROR_STREAM("Given ROS image format: " << imageFormat << " is not supported!");
                 return false;
             }
             return true;

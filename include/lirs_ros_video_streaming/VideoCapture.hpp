@@ -28,20 +28,20 @@
 
 #pragma once
 
+#include <linux/videodev2.h>
 #include <vector>
 #include <chrono>
 #include <optional>
 
-#include "linux/videodev2.h"
-
 namespace lirs {
-    struct V4L2Defaults {
-        static constexpr auto DEFAULT_FRAME_RATE = 30u;
-        static constexpr auto DEFAULT_FRAME_WIDTH = 640u;
-        static constexpr auto DEFAULT_FRAME_HEIGHT = 480u;
-        static constexpr auto DEFAULT_V4L2_BUFFERS_NUM = 4u;
-        static constexpr auto DEFAULT_V4L2_PIXEL_FORMAT = V4L2_PIX_FMT_YUYV;
-    };
+
+    namespace v4l2_defaults {
+        constexpr auto DEFAULT_FRAME_RATE = 30;
+        constexpr auto DEFAULT_FRAME_WIDTH = 640;
+        constexpr auto DEFAULT_FRAME_HEIGHT = 480;
+        constexpr auto DEFAULT_V4L2_BUFFERS_NUM = 4;
+        constexpr auto DEFAULT_V4L2_PIXEL_FORMAT = uint32_t{V4L2_PIX_FMT_YUYV};
+    }
 
     /**
      * @brief Captured video data, i.e. images.
@@ -68,7 +68,6 @@ namespace lirs {
 
     private:
         std::vector<uint8_t> buffer_;
-
         std::chrono::nanoseconds captured_;
     };
 
@@ -77,7 +76,7 @@ namespace lirs {
      *
      * Capture parameters used in order to get and/or modify parameters in VideoCapture.
      */
-    enum class CaptureParam {
+    enum class CaptureParam : uint8_t {
         FRAME_RATE,
         FRAME_WIDTH,
         FRAME_HEIGHT,
@@ -154,7 +153,7 @@ namespace lirs {
          * @param value capture parameter's new value.
          * @return true - if parameter is changed, false - otherwise.
          */
-        virtual bool Set(CaptureParam param, uint32_t value) = 0;
+        virtual bool Set(CaptureParam param, int value) = 0;
 
         /**
          * @brief Gets capture parameter's value.
@@ -162,7 +161,7 @@ namespace lirs {
          * @param param capture parameter name.
          * @return capture parameter's value.
          */
-        virtual uint32_t Get(CaptureParam param) const = 0;
+        virtual int Get(CaptureParam param) const = 0;
 
         /**
          * @return capture resource, or device.
@@ -172,21 +171,17 @@ namespace lirs {
         /**
          * @return captured image line size in bytes.
          */
-        virtual uint32_t imageStep() const = 0;
+        virtual int imageStep() const = 0;
 
         /**
          * @return captured image size in bytes.
          */
-        virtual uint32_t imageSize() const = 0;
+        virtual int imageSize() const = 0;
 
-        /* Copying and moving are prohibited */
-
+        /* No copy */
         VideoCapture(VideoCapture const &) = delete;
-
-        VideoCapture(VideoCapture &&) = delete;
 
         VideoCapture &operator=(VideoCapture const &) = delete;
 
-        VideoCapture &operator=(VideoCapture &&) = delete;
     };
 }  // namespace lirs

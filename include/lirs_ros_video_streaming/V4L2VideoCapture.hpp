@@ -28,18 +28,19 @@
 
 #pragma once
 
-#include <sys/mman.h>
+#include "VideoCapture.hpp"
 
+#include <sys/mman.h>
 #include <optional>
 #include <atomic>
 #include <vector>
 #include <string>
 #include <map>
 
-#include "VideoCapture.hpp"
 #include "V4L2Utils.hpp"
 
 namespace lirs {
+
     class V4L2Capture final : public VideoCapture {
     public:
         /**
@@ -49,18 +50,21 @@ namespace lirs {
          * After successful video resource acquisition it will be opened, i.e. IsOpen() = true.
          */
         explicit V4L2Capture(std::string device,
-                             uint32_t v4l2PixFmt = V4L2Defaults::DEFAULT_V4L2_PIXEL_FORMAT,
-                             uint32_t width = V4L2Defaults::DEFAULT_FRAME_WIDTH,
-                             uint32_t height = V4L2Defaults::DEFAULT_FRAME_HEIGHT,
-                             uint32_t frameRate = V4L2Defaults::DEFAULT_FRAME_RATE,
-                             uint32_t bufferSize = V4L2Defaults::DEFAULT_V4L2_BUFFERS_NUM);
+                             uint32_t v4l2PixFmt = v4l2_defaults::DEFAULT_V4L2_PIXEL_FORMAT,
+                             int width = v4l2_defaults::DEFAULT_FRAME_WIDTH,
+                             int height = v4l2_defaults::DEFAULT_FRAME_HEIGHT,
+                             int frameRate = v4l2_defaults::DEFAULT_FRAME_RATE,
+                             int bufferSize = v4l2_defaults::DEFAULT_V4L2_BUFFERS_NUM);
 
         ~V4L2Capture() override {
-            if (IsOpened() && IsStreaming()) {
-                disableSteaming();
-                cleanupInternalBuffers();
+            if (IsOpened()) {
+                if (IsStreaming()) {
+                    disableSteaming();
+                    cleanupInternalBuffers();
+                }
+
                 if (V4L2Utils::close_device(handle_)) {
-                    handle_ = V4L2Constants::CLOSED_HANDLE;
+                    handle_ = v4l2_constants::CLOSED_HANDLE;
                 }
             }
         }
@@ -78,9 +82,9 @@ namespace lirs {
 
          * @return true - if parameter's changed, false - otherwise.
          */
-        bool Set(CaptureParam param, uint32_t value) override;
+        bool Set(CaptureParam param, int value) override;
 
-        uint32_t Get(CaptureParam param) const override;
+        int Get(CaptureParam param) const override;
 
         std::optional<Frame> ReadFrame() override;
 
@@ -88,11 +92,11 @@ namespace lirs {
             return device_;
         };
 
-        uint32_t imageStep() const override {
+        int imageStep() const override {
             return imageStep_;
         }
 
-        uint32_t imageSize() const override {
+        int imageSize() const override {
             return imageSize_;
         }
 
@@ -108,16 +112,16 @@ namespace lirs {
 
     private:
         struct MappedBuffer final {
-            void *rawDataPtr;
-            size_t lengthBytes;
+            void *rawDataPtr = nullptr;
+            int lengthBytes = -1;
 
             ~MappedBuffer() {
-                if (munmap(rawDataPtr, lengthBytes) == V4L2Utils::ERROR_CODE) {
+                if (munmap(rawDataPtr, static_cast<size_t>(lengthBytes)) == V4L2Utils::ERROR_CODE) {
                     std::cerr << "WARNING: Unable to unmap buffers\n";
                 }
             }
 
-            MappedBuffer(void *bufData, size_t bufLen) : rawDataPtr(bufData), lengthBytes(bufLen) {}
+            MappedBuffer(void *bufData, int bufLen) : rawDataPtr(bufData), lengthBytes(bufLen) {}
         };
 
         bool allocateInternalBuffers();
@@ -139,9 +143,9 @@ namespace lirs {
     private:
         int handle_;
 
-        uint32_t imageStep_;
+        int imageStep_;
 
-        uint32_t imageSize_;
+        int imageSize_;
 
         std::string const device_;
 
@@ -150,7 +154,7 @@ namespace lirs {
 
         std::vector<MappedBuffer> internalBuffers_;
 
-        std::map<CaptureParam, uint32_t> params_;
+        std::map<CaptureParam, int> params_;
     };
 
 }  // namespace lirs

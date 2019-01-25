@@ -42,10 +42,11 @@
 #include <set>
 
 namespace lirs {
-    struct V4L2Constants {
-        static constexpr auto CLOSED_HANDLE = -1;
-        static constexpr auto V4L2_MAX_BUFFER_SIZE = 32u;
-    };
+
+    namespace v4l2_constants {
+        constexpr auto CLOSED_HANDLE = -1;
+        constexpr auto V4L2_MAX_BUFFER_SIZE = 32;
+    }
 
     struct V4L2Utils {
         static constexpr auto ERROR_CODE = -1;
@@ -63,7 +64,7 @@ namespace lirs {
             return select(handle + 1, &fds, nullptr, nullptr, &timeout) == SELECT_NUM_OF_READY_DEVICES;
         }
 
-        static inline int xioctl(int handle, unsigned long int request, void *arg) {
+        static inline int xioctl(int handle, size_t request, void *arg) {
             int status{0};
             do {
                 status = ioctl(handle, request, arg);
@@ -87,18 +88,18 @@ namespace lirs {
         }
 
         static inline int open_device(std::string const &device) {
-            if (!v4l2_is_character(device)) return V4L2Constants::CLOSED_HANDLE;
+            if (!v4l2_is_character(device)) return v4l2_constants::CLOSED_HANDLE;
 
-            if (auto handle = open(device.c_str(), O_RDWR | O_NONBLOCK); handle != V4L2Constants::CLOSED_HANDLE) {
+            if (auto handle = open(device.c_str(), O_RDWR | O_NONBLOCK); handle != v4l2_constants::CLOSED_HANDLE) {
                 return handle;
             }
 
             std::cerr << "ERROR: Cannot open v4l2 device " << device << " - " << strerror(errno) << '\n';
-            return V4L2Constants::CLOSED_HANDLE;
+            return v4l2_constants::CLOSED_HANDLE;
         }
 
         static bool close_device(int handle) {
-            if (handle == lirs::V4L2Constants::CLOSED_HANDLE) return false;
+            if (handle == lirs::v4l2_constants::CLOSED_HANDLE) return false;
 
             if (close(handle) == ERROR_CODE) {
                 std::cerr << "ERROR: Cannot close v4l2 device - " << strerror(errno) << '\n';
@@ -151,10 +152,10 @@ namespace lirs {
                 return std::nullopt;
             }
 
-            return std::optional{capability};
+            return {capability};
         }
 
-        static bool v4l2_check_capabilities(v4l2_capability const &caps, long requiredCaps) {
+        static bool v4l2_check_capabilities(v4l2_capability const &caps, uint32_t requiredCaps) {
             if (!(caps.capabilities & requiredCaps)) {
                 std::cerr << "ERROR: Device does not support required capabilities\n";
                 return false;
@@ -169,48 +170,50 @@ namespace lirs {
 
         // Checks if given format is supported on v4l2 device w/o interrupting video capturing
         static std::optional<v4l2_format> v4l2_try_format(int handle, uint32_t pixFmt,
-                                                          uint32_t width, uint32_t height) {
+                                                          int width, int height) {
             v4l2_format format{};
             format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             format.fmt.pix.field = V4L2_FIELD_ANY;
             format.fmt.pix.pixelformat = pixFmt;
-            format.fmt.pix.width = width;
-            format.fmt.pix.height = height;
+            format.fmt.pix.width = static_cast<uint32_t >(width);
+            format.fmt.pix.height = static_cast<uint32_t >(height);
 
             if (V4L2Utils::xioctl(handle, VIDIOC_TRY_FMT, &format) == ERROR_CODE) {
                 std::cerr << "ERROR: VIDIOC_TRY_FMT - " << strerror(errno) << '\n';
                 return std::nullopt;
             }
 
-            if (format.fmt.pix.pixelformat != pixFmt || format.fmt.pix.width != width
-                || format.fmt.pix.height != height) {
+            if (format.fmt.pix.pixelformat != pixFmt
+                || format.fmt.pix.width != static_cast<uint32_t >(width)
+                || format.fmt.pix.height != static_cast<uint32_t >(height)) {
                 return std::nullopt;
             }
 
-            return std::optional{format};
+            return {format};
         }
 
         // Sets given format to the v4l2 device (device should not be in streaming mode)
         static std::optional<v4l2_format> v4l2_set_format(int handle, uint32_t pixFmt,
-                                                          uint32_t width, uint32_t height) {
+                                                          int width, int height) {
             v4l2_format format{};
             format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             format.fmt.pix.field = V4L2_FIELD_ANY;
             format.fmt.pix.pixelformat = pixFmt;
-            format.fmt.pix.width = width;
-            format.fmt.pix.height = height;
+            format.fmt.pix.width = static_cast<uint32_t >(width);
+            format.fmt.pix.height = static_cast<uint32_t >(height);
 
             if (V4L2Utils::xioctl(handle, VIDIOC_S_FMT, &format) == ERROR_CODE) {
                 std::cerr << "ERROR: VIDIOC_S_FMT - " << strerror(errno) << '\n';
                 return std::nullopt;
             }
 
-            if (format.fmt.pix.pixelformat != pixFmt || format.fmt.pix.width != width
-                || format.fmt.pix.height != height) {
+            if (format.fmt.pix.pixelformat != pixFmt
+                || format.fmt.pix.width != static_cast<uint32_t >(width)
+                || format.fmt.pix.height != static_cast<uint32_t >(height)) {
                 return std::nullopt;
             }
 
-            return std::optional{format};
+            return {format};
         }
 
         static std::optional<v4l2_format> v4l2_get_current_format(int handle) {
@@ -222,7 +225,7 @@ namespace lirs {
                 return std::nullopt;
             }
 
-            return std::optional{format};
+            return {format};
         }
 
         static std::optional<v4l2_streamparm> v4l2_get_current_frame_rate(int handle) {
@@ -234,22 +237,22 @@ namespace lirs {
                 return std::nullopt;
             }
 
-            return std::optional{streamParam};
+            return {streamParam};
         }
 
         // Sets frame rate on v4l2 device (device should not be in streaming mode)
-        static std::optional<v4l2_streamparm> v4l2_set_frame_rate(int handle, uint32_t num, uint32_t den) {
+        static std::optional<v4l2_streamparm> v4l2_set_frame_rate(int handle, int num, int den) {
             v4l2_streamparm streamParam{};
             streamParam.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            streamParam.parm.capture.timeperframe.numerator = num;
-            streamParam.parm.capture.timeperframe.denominator = den;
+            streamParam.parm.capture.timeperframe.numerator = static_cast<uint32_t >(num);
+            streamParam.parm.capture.timeperframe.denominator = static_cast<uint32_t >(den);
 
             if (V4L2Utils::xioctl(handle, VIDIOC_S_PARM, &streamParam) == ERROR_CODE) {
                 std::cerr << "ERROR: VIDIOC_S_PARM - " << strerror(errno) << '\n';
                 return std::nullopt;
             }
 
-            return std::optional{streamParam};
+            return {streamParam};
         }
 
         template<typename T, typename std::enable_if<std::is_arithmetic<T>::value, T>::type * = nullptr>

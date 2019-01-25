@@ -27,7 +27,6 @@
  */
 
 #include <linux/videodev2.h>
-
 #include <string>
 #include <sstream>
 #include <optional>
@@ -47,15 +46,15 @@ namespace lirs {
     namespace ros_utils {
 
         /* defaults */
-        const auto DEFAULT_DEVICE_NAME = "/dev/video0"s;
-        const auto DEFAULT_CAMERA_NAME = "camera"s;
-        const auto DEFAULT_CAMERA_INFO_URL = ""s;
-        const auto DEFAULT_FRAME_ID = DEFAULT_CAMERA_NAME + "_frame_id"s;
+        constexpr auto DEFAULT_DEVICE_NAME = "/dev/video0";
+        constexpr auto DEFAULT_CAMERA_NAME = "camera";
+        constexpr auto DEFAULT_CAMERA_INFO_URL = "";
+        constexpr auto DEFAULT_FRAME_ID = "camera_frame_id";
 
-        static constexpr auto DEFAULT_FRAME_RATE = 30;
-        static constexpr auto DEFAULT_FRAME_WIDTH = 640;
-        static constexpr auto DEFAULT_FRAME_HEIGHT = 480;
-        const auto DEFAULT_IMAGE_FORMAT = sensor_msgs::image_encodings::YUV422;
+        constexpr auto DEFAULT_FRAME_RATE = 30;
+        constexpr auto DEFAULT_FRAME_WIDTH = 640;
+        constexpr auto DEFAULT_FRAME_HEIGHT = 480;
+        constexpr auto DEFAULT_IMAGE_FORMAT = "yuv422";
 
         static sensor_msgs::CameraInfo defaultCameraInfoFrom(sensor_msgs::ImagePtr const &img) {
             sensor_msgs::CameraInfo cam_info_msg;
@@ -107,8 +106,8 @@ namespace lirs {
 
             auto imageMsg = boost::make_shared<sensor_msgs::Image>();
             imageMsg->header.frame_id = frameId;
-            imageMsg->width = capture.Get(lirs::CaptureParam::FRAME_WIDTH);
-            imageMsg->height = capture.Get(lirs::CaptureParam::FRAME_HEIGHT);
+            imageMsg->width = static_cast<uint32_t >(capture.Get(lirs::CaptureParam::FRAME_WIDTH));
+            imageMsg->height = static_cast<uint32_t >(capture.Get(lirs::CaptureParam::FRAME_HEIGHT));
             imageMsg->is_bigendian = 0;
 
             // YUV422 represents UYVY (not YUYV),
@@ -120,8 +119,8 @@ namespace lirs {
                 imageMsg->data.reserve(imageMsg->step * imageMsg->height);
             } else {
                 imageMsg->encoding = imageFormat;
-                imageMsg->step = capture.imageStep();
-                imageMsg->data.reserve(capture.imageSize());
+                imageMsg->step = static_cast<uint32_t >(capture.imageStep());
+                imageMsg->data.reserve(static_cast<size_t >(capture.imageSize()));
             }
 
             return imageMsg;
@@ -151,14 +150,14 @@ int main(int argc, char **argv) {
     int frameRate;
     std::string imageFormat;
 
-    nodeHandle_.param("device_name", deviceName, lirs::ros_utils::DEFAULT_DEVICE_NAME);
-    nodeHandle_.param("camera_name", cameraName, lirs::ros_utils::DEFAULT_CAMERA_NAME);
-    nodeHandle_.param("frame_id", frameId, lirs::ros_utils::DEFAULT_FRAME_ID);
-    nodeHandle_.param("camera_info_url", cameraInfoUrl, lirs::ros_utils::DEFAULT_CAMERA_INFO_URL);
+    nodeHandle_.param("device_name", deviceName, std::string{lirs::ros_utils::DEFAULT_DEVICE_NAME});
+    nodeHandle_.param("camera_name", cameraName, std::string{lirs::ros_utils::DEFAULT_CAMERA_NAME});
+    nodeHandle_.param("frame_id", frameId, std::string{lirs::ros_utils::DEFAULT_FRAME_ID});
+    nodeHandle_.param("camera_info_url", cameraInfoUrl, std::string{lirs::ros_utils::DEFAULT_CAMERA_INFO_URL});
     nodeHandle_.param("width", width, lirs::ros_utils::DEFAULT_FRAME_WIDTH);
     nodeHandle_.param("height", height, lirs::ros_utils::DEFAULT_FRAME_HEIGHT);
     nodeHandle_.param("fps", frameRate, lirs::ros_utils::DEFAULT_FRAME_RATE);
-    nodeHandle_.param("image_format", imageFormat, lirs::ros_utils::DEFAULT_IMAGE_FORMAT);
+    nodeHandle_.param("image_format", imageFormat, std::string{lirs::ros_utils::DEFAULT_IMAGE_FORMAT});
 
     // checking image format
 

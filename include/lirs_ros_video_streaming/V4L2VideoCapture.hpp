@@ -79,8 +79,6 @@ namespace lirs {
 
         /**
          * @brief Sets capture parameters if streaming mode is not enabled.
-
-         * @return true - if parameter's changed, false - otherwise.
          */
         bool Set(CaptureParam param, int value) override;
 
@@ -149,7 +147,7 @@ namespace lirs {
 
         std::string const device_;
 
-        /* Flag indicating if streaming process in on */
+        /* Flag indicating if streaming process is on */
         std::atomic_bool isStreaming_;
 
         std::vector<MappedBuffer> internalBuffers_;
